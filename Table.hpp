@@ -98,7 +98,7 @@ namespace Ext {
                 else if(row <= 0 && column > 0)
                     row = 1;
     
-                TableVect.resize(row, vector<string>(column, ""));
+                this->TableVect.resize(row, vector<string>(column, ""));
             }
     
             static Table Parse(const vector<vector<string>> &table) {
@@ -123,19 +123,19 @@ namespace Ext {
     
                 for(int _ = 0; _ < count; ++_) {
                     if(where == "Top" || where == "T") {
-                        vector<string> NewRow(TableVect[0].size(), "");
-                        TableVect.insert(TableVect.begin(), NewRow);
+                        vector<string> NewRow(this->TableVect[0].size(), "");
+                        this->TableVect.insert(this->TableVect.begin(), NewRow);
                     }
                     else if(where == "Bottom" || where == "B") {
-                        vector<string> NewRow(TableVect[0].size(), "");
-                        TableVect.push_back(NewRow);
+                        vector<string> NewRow(this->TableVect[0].size(), "");
+                        this->TableVect.push_back(NewRow);
                     }
                     else if(where == "Left" || where == "L") {
-                        for(auto &Row : TableVect)
+                        for(auto &Row : this->TableVect)
                             Row.insert(Row.begin(), "");
                     }
                     else if(where == "Right" || where == "R") {
-                        for(auto &Row : TableVect)
+                        for(auto &Row : this->TableVect)
                             Row.push_back("");
                     }
                     else {
@@ -145,23 +145,23 @@ namespace Ext {
             }
     
             void Set(const string &value, int row, int column) {
-                if(row < 0 || row >= static_cast<int>(TableVect.size()))
+                if(row < 0 || row >= static_cast<int>(this->TableVect.size()))
                     throw IndexError("Table row index out of range.");
     
-                if(column < 0 || column >= static_cast<int>(TableVect[row].size()))
+                if(column < 0 || column >= static_cast<int>(this->TableVect[row].size()))
                     throw IndexError("Table column index out of range.");
     
-                TableVect[row][column] = value;
+                this->TableVect[row][column] = value;
             }
     
             string Get(int row, int column) const {
-                if(row < 0 || row >= static_cast<int>(TableVect.size()))
+                if(row < 0 || row >= static_cast<int>(this->TableVect.size()))
                     throw IndexError("Table row index out of range.");
     
-                if(column < 0 || column >= static_cast<int>(TableVect[row].size()))
+                if(column < 0 || column >= static_cast<int>(this->TableVect[row].size()))
                     throw IndexError("Table column index out of range.");
     
-                return TableVect[row][column];
+                return this->TableVect[row][column];
             }
     
             void Delete(string type, int index) {
@@ -169,15 +169,15 @@ namespace Ext {
                 if(!IsIn(AllowedTypes, type))
                     throw ValueError(std::format("Unknown type: {}.", type));
     
-                if((type.starts_with("R") && index >= static_cast<int>(TableVect.size())) ||
-                    (type.starts_with("C") && index >= static_cast<int>(TableVect[0].size())))
+                if((type.starts_with("R") && index >= static_cast<int>(this->TableVect.size())) ||
+                    (type.starts_with("C") && index >= static_cast<int>(this->TableVect[0].size())))
                     throw IndexError("Table index out of range.");
     
                 if(type == "Row" || type == "R") {
-                    TableVect.erase(TableVect.begin() + index);
+                    this->TableVect.erase(this->TableVect.begin() + index);
                 }
                 else {
-                    for(auto &Row : TableVect) {
+                    for(auto &Row : this->TableVect) {
                         Row.erase(Row.begin() + index);
                     }
                 }
@@ -188,7 +188,7 @@ namespace Ext {
                 if(!IsIn(AllowedAlignments, alignment))
                     throw ValueError(std::format("Unknown alignment: {}.", alignment));
     
-                vector<int> LongestPerColumn = Map(Zip(TableVect), [](const vector<string> &Column) {
+                vector<int> LongestPerColumn = Map(Zip(this->TableVect), [](const vector<string> &Column) {
                     size_t maxlen = 0;
                     for(const auto &Cell : Column)
                         maxlen = std::max(maxlen, Cell.size());
@@ -200,7 +200,7 @@ namespace Ext {
     
                 vector<string> Output = {Separator};
     
-                for(const auto &Row : TableVect) {
+                for(const auto &Row : this->TableVect) {
                     vector<string> CellStrings;
                     for(size_t j = 0; j < Row.size(); ++j) {
                         const auto &Cell = Row[j];
@@ -208,8 +208,7 @@ namespace Ext {
                             CellStrings.push_back(ExtString::RJust(Cell, LongestPerColumn[j]));
                         else if(alignment.starts_with("L"))
                             CellStrings.push_back(ExtString::LJust(Cell, LongestPerColumn[j]));
-                        else
-                            CellStrings.push_back(ExtString::Center(Cell, LongestPerColumn[j]));
+                        else CellStrings.push_back(ExtString::Center(Cell, LongestPerColumn[j]));
                     }
                     string RowStr = "| " + ExtString::Join(CellStrings, " | ") + " |";
                     Output.push_back(RowStr);
@@ -237,7 +236,7 @@ namespace Ext {
                     Result.emplace_back(i, &vec[i]);
                 return Result;
             }
-    
+
             static vector<vector<string>> Zip(const vector<vector<string>> &data) {
                 if(data.empty()) 
                     return {};

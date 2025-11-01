@@ -119,7 +119,7 @@ class Table:
         if type not in ["Row", "Column", "R", "C"]:
             raise ValueError(f"Unknown type: {type}.")
         
-        if isinstance(index, int):
+        if not isinstance(index, int):
             raise TypeError("Param index must be an int.")
         
         if type.startswith("R") and index > len(self.Table) - 1:
