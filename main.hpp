@@ -9,7 +9,7 @@
 #include <format>
 #include <ranges>
 
-namespace ext {
+namespace Ext {
     using std::string;
     using std::vector;
     
