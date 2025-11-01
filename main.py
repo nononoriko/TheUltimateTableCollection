@@ -1,5 +1,4 @@
 from typing import Literal, Self
-import csv
 
 class Table:
     Table: list[list[str]] = []
@@ -177,11 +176,3 @@ class Table:
 
     def __str__(self) -> str:
         return self.Stringify()
-    
-with open("poemwords.csv") as file:
-    CSV: list[list[str]] = list(csv.reader(file))
-
-table: Table = Table.Parse(CSV)
-
-with open("output.txt", "w", encoding="utf-8") as file:
-    file.write(table.Stringify())

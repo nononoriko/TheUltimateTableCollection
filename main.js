@@ -1,15 +1,3 @@
-import fs from "fs/promises";
-
-/**
- * 
- * @param {string} csvString
- * @returns {string[][]} 
- */
-const CSVParse = (csvString) => {
-    const Lines = csvString.split("\n");
-    return Lines.map(Line => Line.trim().split(","));
-};
-
 class ValueError extends Error {
     constructor(Message) {
         super(Message);
@@ -339,7 +327,3 @@ class Table {
         return Array.from({ length }, (_, i) => Iterators.map(It => It[i]));
     };
 }
-
-const file = await fs.readFile("poemwords.csv", { encoding: "utf-8" });
-const csvTable = Table.Parse(CSVParse(file));
-await fs.writeFile("output.txt", csvTable.Stringify("L"), { encoding: "utf-8" });
