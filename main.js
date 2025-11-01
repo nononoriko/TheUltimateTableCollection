@@ -34,7 +34,7 @@ class Table {
      * @param {number} row 
      * @param {number} column 
      */
-    constructor(row = 0, column = 0) {
+    constructor(row = 1, column = 1) {
         if(Table.GetType(row) !== "int") 
             throw new TypeError("Param row must be an int.");
         
@@ -42,7 +42,7 @@ class Table {
             throw new TypeError("Param column must be an int.");
 
         if(row <= 0 && column <= 0)
-            return;
+            throw new ValueError("Cannot create a table with 0 cells.");
 
         if(row > 0 && column <= 0) 
             column = 1;
@@ -246,7 +246,7 @@ class Table {
      * @param {"Left" | "Right" | "Center" | "L" | "R" | "C"} alignment 
      * @returns {string}
      */
-    Stringify = (alignment) => {
+    Stringify = (alignment = "L") => {
         if(!["Left", "Right", "Center", "L", "R", "C"].includes(alignment))
             throw new ValueError(`Unknown alignment: ${alignment}.`);
 

@@ -4,7 +4,7 @@ import csv
 class Table:
     Table: list[list[str]] = []
 
-    def __init__(self, row: int = 0, column: int = 0) -> None:
+    def __init__(self, row: int = 1, column: int = 1) -> None:
         """
         Create a table.
         """
@@ -15,7 +15,7 @@ class Table:
             raise TypeError("Param column must be an int.")
         
         if row <= 0 and column <= 0:
-            return
+            raise ValueError("Cannot create a table with 0 cells.")
         
         if row > 0 and column <= 0:
             column = 1
@@ -154,7 +154,7 @@ class Table:
         
         return self.Table[row][column]
 
-    def Stringify(self, alignment: Literal["Left", "Right", "Center", "L", "R", "C"]) -> str:
+    def Stringify(self, alignment: Literal["Left", "Right", "Center", "L", "R", "C"] = "L") -> str:
         if alignment not in ["Left", "Right", "Center", "L", "R", "C"]:
             raise ValueError(f"Unknown alignment: {alignment}.")
         
@@ -176,7 +176,7 @@ class Table:
         return "\n".join(Output)
 
     def __str__(self) -> str:
-        return self.Stringify("L")
+        return self.Stringify()
     
 with open("poemwords.csv") as file:
     CSV: list[list[str]] = list(csv.reader(file))
@@ -184,4 +184,4 @@ with open("poemwords.csv") as file:
 table: Table = Table.Parse(CSV)
 
 with open("output.txt", "w", encoding="utf-8") as file:
-    file.write(table.Stringify("L"))
+    file.write(table.Stringify())
