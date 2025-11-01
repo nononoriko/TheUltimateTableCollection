@@ -12,7 +12,7 @@ class IndexError extends Error {
     }
 }
 
-class Table {
+export default class Table {
     /**
      * @type {string[][]}
      */
