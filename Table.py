@@ -1,5 +1,4 @@
 from typing import Literal, Self
-from t
 
 class Table:
     Table: list[list[str]] = []
