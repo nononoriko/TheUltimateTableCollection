@@ -1,4 +1,5 @@
 from typing import Literal, Self
+from t
 
 class Table:
     Table: list[list[str]] = []
@@ -122,12 +123,12 @@ class Table:
         if not isinstance(index, int):
             raise TypeError("Param index must be an int.")
         
-        if type.startswith("R") and index > len(self.Table) - 1:
-            raise IndexError("Table row index out of range.")
+        if type.startswith("R") and index > len(self.Table) - 1 or type.startswith("C") and index > len(self.Table[0]) - 1:
+            raise IndexError("Table index out of range.")
         
-        if type.startswith("C") and index > len(self.Table[0]) - 1:
-            raise IndexError("Table column index out of range.")
-        
+        if len(self.Table) == 1 and type.startswith("R") or len(self.Table[0]) == 1 and type.startswith("C"):
+            raise ValueError(f"Cannot remove the last {type.lower()} of the table.")
+
         match type:
             case "Column" | "C":
                 for i in range(len(self.Table)):

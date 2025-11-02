@@ -193,6 +193,9 @@ export default class Table {
         if(type.startsWith("C") && index > this.Table[0].length - 1)
             throw new IndexError("Table column index out of range.");
 
+        if(this.Table.length === 1 && type.startsWith("R") || this.Table[0].length === 1 && type.startsWith("C"))
+            throw new ValueError(`Cannot remove the last ${type.toLowerCase()} of the table.`);
+
         switch(type) {
             case "Row":
             case "R":

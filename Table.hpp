@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <cctype>
 #include <algorithm>
 #include <stdexcept>
 #include <format>
@@ -28,7 +29,6 @@ namespace Ext {
     class IndexError : public std::exception {
         public:
             explicit IndexError(const string &message) : Message(message) {}
-            ~IndexError() noexcept override = default;
     
             const char* what() const noexcept override {
                 return Message.c_str();
@@ -86,6 +86,36 @@ namespace Ext {
     };
     
     class Table {
+        private:
+            template <typename T, typename Func>
+            static auto Map(const vector<T> &vec, Func func) {
+                using ResultType = decltype(func(std::declval<T>()));
+                vector<ResultType> Result;
+                Result.reserve(vec.size());
+                for(const auto &item : vec)
+                    Result.push_back(func(item));
+                return Result;
+            }
+            
+            static vector<vector<string>> Zip(const vector<vector<string>> &data) {
+                if(data.empty()) 
+                    return {};
+                
+                size_t Rows = data.size(), Columns = data[0].size();
+                vector<vector<string>> Result(Columns, vector<string>(Rows));
+                for(size_t i = 0; i < Rows; ++i) {
+                    for(size_t j = 0; j < Columns; ++j) {
+                        Result[j][i] = data[i][j];
+                    }
+                }
+                return Result;
+            }
+    
+            template <typename T>
+            static bool IsIn(const vector<T> &container, const T &element) {
+                return std::find(container.begin(), container.end(), element) != container.end();
+            }
+
         public:
             vector<vector<string>> TableVect;
     
@@ -166,8 +196,13 @@ namespace Ext {
     
             void Delete(string type, int index) {
                 const vector<string> AllowedTypes = {"Row", "R", "Column", "C"};
-                if(!IsIn(AllowedTypes, type))
+                if(!Table::IsIn(AllowedTypes, type))
                     throw ValueError(std::format("Unknown type: {}.", type));
+
+                if(this->TableVect.size() == 1 && type.starts_with("R") || this->TableVect[0].size() == 1 && type.starts_with("C")) {
+                    std::transform(type.begin(), type.end(), type.begin(), [](unsigned char chr) { return std::tolower(chr); });
+                    throw ValueError(std::format("Cannot remove the last {} of the table", type));
+                }
     
                 if((type.starts_with("R") && index >= static_cast<int>(this->TableVect.size())) ||
                     (type.starts_with("C") && index >= static_cast<int>(this->TableVect[0].size())))
@@ -185,17 +220,17 @@ namespace Ext {
     
             string Stringify(string alignment = "L") const {
                 const vector<string> AllowedAlignments = {"Left", "Right", "Center", "L", "R", "C"};
-                if(!IsIn(AllowedAlignments, alignment))
+                if(!Table::IsIn(AllowedAlignments, alignment))
                     throw ValueError(std::format("Unknown alignment: {}.", alignment));
     
-                vector<int> LongestPerColumn = Map(Zip(this->TableVect), [](const vector<string> &Column) {
+                vector<int> LongestPerColumn = Table::Map(Table::Zip(this->TableVect), [](const vector<string> &Column) {
                     size_t maxlen = 0;
                     for(const auto &Cell : Column)
                         maxlen = std::max(maxlen, Cell.size());
                     return static_cast<int>(maxlen);
                 });
     
-                string Separator = "+" + ExtString::Join(Map(LongestPerColumn,
+                string Separator = "+" + ExtString::Join(Table::Map(LongestPerColumn,
                     [](int Width) { return ExtString::Repeat("-", Width + 2); }), "+") + "+";
     
                 vector<string> Output = {Separator};
@@ -216,44 +251,6 @@ namespace Ext {
                 }
     
                 return ExtString::Join(Output, "\n");
-            }
-    
-        private:
-            template <typename T, typename Func>
-            static auto Map(const vector<T> &vec, Func func) {
-                using ResultType = decltype(func(std::declval<T>()));
-                vector<ResultType> Result;
-                Result.reserve(vec.size());
-                for(const auto &item : vec)
-                    Result.push_back(func(item));
-                return Result;
-            }
-            
-            template <typename T>
-            static vector<std::pair<size_t, T*>> Enumerate(vector<T> &vec) {
-                vector<std::pair<size_t, T*>> Result;
-                for(size_t i = 0; i < vec.size(); ++i)
-                    Result.emplace_back(i, &vec[i]);
-                return Result;
-            }
-
-            static vector<vector<string>> Zip(const vector<vector<string>> &data) {
-                if(data.empty()) 
-                    return {};
-                
-                size_t Rows = data.size(), Columns = data[0].size();
-                vector<vector<string>> Result(Columns, vector<string>(Rows));
-                for(size_t i = 0; i < Rows; ++i) {
-                    for(size_t j = 0; j < Columns; ++j) {
-                        Result[j][i] = data[i][j];
-                    }
-                }
-                return Result;
-            }
-    
-            template <typename T>
-            static bool IsIn(const vector<T> &container, const T &element) {
-                return std::find(container.begin(), container.end(), element) != container.end();
             }
     };
 }
