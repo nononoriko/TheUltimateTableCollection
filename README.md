@@ -1,2 +1,3 @@
 # TheUltimateTableCollection
-This is, in fact, The Ultimate Table Collection.
+A collection of the Table class in different programming languages.
+

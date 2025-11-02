@@ -3,3 +3,6 @@ test*
 *.exe
 *.csv
 *.txt
+__pycache__/
+target/
+Cargo.lock

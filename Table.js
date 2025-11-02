@@ -19,6 +19,7 @@ export default class Table {
     Table = [];
 
     /**
+     * Create a new 1x1 Table.
      * @param {number} row 
      * @param {number} column 
      */
@@ -48,7 +49,7 @@ export default class Table {
     }
 
     /**
-     * 
+     * Parse a 2D array to a table.
      * @param {string[][]} table 
      * @param {boolean} cast 
      * @returns {Table}
@@ -67,10 +68,15 @@ export default class Table {
          * @type {number}
          */
         const NumberOfColumns = table[0].length;
+        
         for(const [i, Row] of table.entries()) {
             if(Row.length !== NumberOfColumns) {
                 throw new ValueError(`Row ${i} has ${Row.length} columns, expected ${NumberOfColumns}.`);
             }
+        }
+        
+        if(NumberOfColumns === 0) {
+            return new Table(table.length);
         }
 
         /**
@@ -84,16 +90,11 @@ export default class Table {
             const NewRow = [];
             for(const [j, Cell] of Row.entries()) {
                 if(Table.GetType(Cell) !== "string") {
-                    if(cast) {
+                    if(cast) 
                         NewRow.push(String(Cell));
-                    }
-                    else {
-                        throw new TypeError(`Cell (${i}, ${j}) must be a string.`);
-                    }
+                    else throw new TypeError(`Cell (${i}, ${j}) must be a string.`);
                 }
-                else {
-                    NewRow.push(Cell);
-                }
+                else NewRow.push(Cell);
             }
             ProcessedTable.push(NewRow);
         }
@@ -107,7 +108,7 @@ export default class Table {
     };
 
     /**
-     * 
+     * Add a row/column. Top and Bottom add rows, Left and Right add columns.
      * @param {"Top" | "Bottom" | "Left" | "Right" | "T" | "L" | "B" | "R"} where 
      * @param {number} count 
      */
@@ -151,7 +152,7 @@ export default class Table {
     };
 
     /**
-     * 
+     * Set the value of the cell at row and column.
      * @param {string} value 
      * @param {number} row 
      * @param {number} column 
@@ -166,17 +167,14 @@ export default class Table {
         if(Table.GetType(column) !== "int") 
             throw new TypeError("Param column must be an int.");
 
-        if(row > this.Table.length - 1 || row < 0)
-            throw new IndexError("Table row index out of range.");
-
-        if(column > this.Table[row].length || column < 0)
-            throw new IndexError("Table column index out of range.");
+        if((row > this.Table.length - 1 || row < 0) || (column > this.Table[row].length || column < 0))
+            throw new IndexError("Table index out of range.");
 
         this.Table[row][column] = value;
     };
 
     /**
-     * 
+     * Delete a cell or column.
      * @param {"Row" | "Column" | "R" | "C"} type 
      * @param {number} index 
      */
@@ -187,14 +185,11 @@ export default class Table {
         if(Table.GetType(index) !== "int")
             throw new TypeError("Param index has to be an int.");
 
-        if(type.startsWith("R") && index > this.Table.length - 1)
-            throw new IndexError("Table row index out of range.");
-
-        if(type.startsWith("C") && index > this.Table[0].length - 1)
-            throw new IndexError("Table column index out of range.");
+        if(type.startsWith("R") && index > this.Table.length - 1 || type.startsWith("C") && index > this.Table[0].length - 1)
+            throw new IndexError("Table index out of range.");
 
         if(this.Table.length === 1 && type.startsWith("R") || this.Table[0].length === 1 && type.startsWith("C"))
-            throw new ValueError(`Cannot remove the last ${type.toLowerCase()} of the table.`);
+            throw new ValueError("Cannot remove the last row/column of the table.");
 
         switch(type) {
             case "Row":
@@ -202,8 +197,7 @@ export default class Table {
                 this.Table.splice(index, 1);
                 break;
 
-            case "Column":
-            case "C":
+            default:
                 for(let i = 0; i < this.Table.length; ++i)
                     this.Table[i].splice(index, 1);
                 break;
@@ -211,7 +205,32 @@ export default class Table {
     };
 
     /**
-     * 
+     * Get a row or column of the table.
+     * @param {"Row" | "Column" | "R" | "C"} type 
+     * @param {Number} index 
+     */
+    GetLine = (type, index) => {
+        if(!["Row", "Column", "R", "C"].includes(type))
+            throw new ValueError(`Unknown type: ${type}`);
+        
+        if(Table.GetType(index) !== "int") 
+            throw new TypeError("Param index must be an int.");
+        
+        if((type.startsWith("R") && index > this.Table.length - 1 || type.startsWith("C") && index > this.Table[0].length - 1) || index < 0)
+            throw new IndexError("Table index out of range.");
+
+        switch(type) {
+            case "Row":
+            case "R":
+                return this.Table[index];
+                
+            default:
+                return Table.Zip(this.Table)[index];
+        }
+    };
+
+    /**
+     * Get the value of the cell at row and column.
      * @param {number} row 
      * @param {number} column 
      * @returns {string}
@@ -223,17 +242,14 @@ export default class Table {
         if(Table.GetType(column) !== "int") 
             throw new TypeError("Param column must be an int.");
 
-        if(row > this.Table.length - 1 || row < 0)
-            throw new IndexError("Table row index out of range.");
-
-        if(column > this.Table[row].length || column < 0)
-            throw new IndexError("Table column index out of range.");
+        if((row > this.Table.length - 1 || row < 0) || (column > this.Table[row].length || column < 0))
+            throw new IndexError("Table index out of range.");
 
         return this.Table[row][column];
     };
 
     /**
-     * 
+     * Parse the table into a spreadsheet.
      * @param {"Left" | "Right" | "Center" | "L" | "R" | "C"} alignment 
      * @returns {string}
      */
@@ -248,7 +264,7 @@ export default class Table {
         /**
          * @type {string}
          */
-        const Seperator = "+" + LongestPerColumn.map(Width => "-".repeat(Width + 2)).join("+") + "+";
+        const Seperator = `+${LongestPerColumn.map(Width => "-".repeat(Width + 2)).join("+")}+`;
         /**
          * @type {string[]}
          */
@@ -266,16 +282,57 @@ export default class Table {
             /**
              * @type {string}
              */
-            const RowString = "| " + CellStrings.join(" | ") + " |";
+            const RowString = `| ${CellStrings.join(" | ")} |`;
             Output.push(RowString, Seperator);
         }
         return Output.join("\n");
     };
 
     /**
+     * Generate an HTML table string.
+     * @param {number} spaces - Number of spaces for Indentation.
+     * @param {boolean} [header=true] - Whether to treat the first row as headers.
+     * @returns {string}
+     */
+    HTMLify = (spaces = 4, header = true) => {
+        if(Table.GetType(spaces) !== "int")
+            throw new TypeError("Parameter 'spaces' must be an integer.");
+        
+        if(spaces < 0)
+            throw new RangeError("Parameter 'spaces' cannot be less than 0.");
+
+        const EscapeHTML = (str) =>
+            String(str).replace(/[&<>"']/g, (ch) => ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;"
+            }[ch]));
+
+        const Lines = [];
+        const Indent = spaces > 0 ? " ".repeat(spaces) : "";
+        const Newline = spaces > 0 ? "\n" : "";
+
+        Lines.push("<table>");
+
+        for(let r = 0; r < this.Table.length; r++) {
+            Lines.push(`${Newline}${Indent}<tr>`);
+            for(const cell of this.Table[r]) {
+                const tag = header && r === 0 ? "th" : "td";
+                Lines.push(`${Newline}${Indent.repeat(2)}<${tag}>${EscapeHTML(cell)}</${tag}>`);
+            }
+            Lines.push(`${Newline}${Indent}</tr>`);
+        }
+
+        Lines.push(`${Newline}</table>`);
+        return Lines.join("");
+    };
+
+    /**
      * Get the true type of the passed in object.
      * @param {any} object 
-     * @returns {string} The true type of the object. null, array, int, float, infinities, and NaN included.
+     * @returns The true type of the object. null, array, int, float, infinities, and NaN included.
      */
     static GetType = (object) => {
         switch(object) {
@@ -304,7 +361,7 @@ export default class Table {
     };
 
     /**
-     * 
+     * Center a string.
      * @param {string} string 
      * @param {number} width 
      * @param {string} pad 

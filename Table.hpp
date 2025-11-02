@@ -87,6 +87,8 @@ namespace Ext {
     
     class Table {
         private:
+            vector<vector<string>> TableVect;
+
             template <typename T, typename Func>
             static auto Map(const vector<T> &vec, Func func) {
                 using ResultType = decltype(func(std::declval<T>()));
@@ -116,16 +118,14 @@ namespace Ext {
                 return std::find(container.begin(), container.end(), element) != container.end();
             }
 
-        public:
-            vector<vector<string>> TableVect;
-    
-            Table(int row = 1, int column = 1) {
+        public:    
+            Table(unsigned int row = 1, unsigned int column = 1) {
                 if(row <= 0 && column <= 0)
                     throw ValueError("Cannot create a table with 0 cells.");
     
-                if(row > 0 && column <= 0)
+                if(row > 0 && column == 0)
                     column = 1;
-                else if(row <= 0 && column > 0)
+                else if(row == 0 && column > 0)
                     row = 1;
     
                 this->TableVect.resize(row, vector<string>(column, ""));
@@ -135,7 +135,7 @@ namespace Ext {
                 if(table.empty())
                     return Table();
     
-                const int NumberOfColumns = table[0].size();
+                const unsigned int NumberOfColumns = table[0].size();
                 for(size_t i = 0; i < table.size(); ++i) {
                     if(table[i].size() != NumberOfColumns) {
                         throw ValueError(std::format("Row {} has {} columns, expected {}.", i, table[i].size(), NumberOfColumns));
@@ -147,11 +147,11 @@ namespace Ext {
                 return New;
             }
     
-            void Add(string where, int count = 1) {
+            void Add(string where, unsigned int count = 1) {
                 if(count < 1)
                     throw ValueError("count must be greater than 0.");
     
-                for(int _ = 0; _ < count; ++_) {
+                for(unsigned int _ = 0; _ < count; ++_) {
                     if(where == "Top" || where == "T") {
                         vector<string> NewRow(this->TableVect[0].size(), "");
                         this->TableVect.insert(this->TableVect.begin(), NewRow);
@@ -168,54 +168,55 @@ namespace Ext {
                         for(auto &Row : this->TableVect)
                             Row.push_back("");
                     }
-                    else {
-                        throw ValueError(std::format("Unknown direction: {}.", where));
-                    }
+                    else throw ValueError(std::format("Unknown direction: {}.", where));
                 }
             }
     
-            void Set(const string &value, int row, int column) {
-                if(row < 0 || row >= static_cast<int>(this->TableVect.size()))
-                    throw IndexError("Table row index out of range.");
-    
-                if(column < 0 || column >= static_cast<int>(this->TableVect[row].size()))
+            void Set(const string &value, unsigned int row, unsigned int column) {
+                if(row >= static_cast<unsigned int>(this->TableVect.size()) || column >= static_cast<unsigned int>(this->TableVect[row].size()))
                     throw IndexError("Table column index out of range.");
     
                 this->TableVect[row][column] = value;
             }
     
-            string Get(int row, int column) const {
-                if(row < 0 || row >= static_cast<int>(this->TableVect.size()))
-                    throw IndexError("Table row index out of range.");
-    
-                if(column < 0 || column >= static_cast<int>(this->TableVect[row].size()))
-                    throw IndexError("Table column index out of range.");
-    
-                return this->TableVect[row][column];
-            }
-    
-            void Delete(string type, int index) {
+            void Delete(string type, unsigned int index) {
                 const vector<string> AllowedTypes = {"Row", "R", "Column", "C"};
                 if(!Table::IsIn(AllowedTypes, type))
                     throw ValueError(std::format("Unknown type: {}.", type));
-
-                if(this->TableVect.size() == 1 && type.starts_with("R") || this->TableVect[0].size() == 1 && type.starts_with("C")) {
-                    std::transform(type.begin(), type.end(), type.begin(), [](unsigned char chr) { return std::tolower(chr); });
-                    throw ValueError(std::format("Cannot remove the last {} of the table", type));
-                }
+                
+                if(this->TableVect.size() == 1 && type.starts_with("R") || this->TableVect[0].size() == 1 && type.starts_with("C"))
+                    throw ValueError(std::format("Cannot remove the last row/column of the table"));
     
-                if((type.starts_with("R") && index >= static_cast<int>(this->TableVect.size())) ||
-                    (type.starts_with("C") && index >= static_cast<int>(this->TableVect[0].size())))
+                if((type.starts_with("R") && index >= static_cast<unsigned int>(this->TableVect.size())) ||
+                (type.starts_with("C") && index >= static_cast<unsigned int>(this->TableVect[0].size())))
                     throw IndexError("Table index out of range.");
     
-                if(type == "Row" || type == "R") {
+                if(type.starts_with("R")) {
                     this->TableVect.erase(this->TableVect.begin() + index);
+                    return;
                 }
-                else {
-                    for(auto &Row : this->TableVect) {
-                        Row.erase(Row.begin() + index);
-                    }
-                }
+
+                for(auto &Row : this->TableVect)
+                    Row.erase(Row.begin() + index);
+            }
+
+            vector<string> GetLine(string type, unsigned int index) {
+                if(IsIn({"Row", "Column", "R", "C"}, type)) 
+                    throw ValueError(std::format("Unknown type: {}.", type));
+                
+                if(index >= static_cast<unsigned int>(this->TableVect.size()) && type.starts_with("R") || index >= static_cast<unsigned int>(this->TableVect[0].size()) && type.starts_with("C"))
+                    throw IndexError("Table index out of range.");
+                
+                if(type == "Row" || type == "R") 
+                    return this->TableVect[index];
+                else return Table::Zip(this->TableVect)[index];
+            }
+
+            string Get(unsigned int row, unsigned int column) const {
+                if(row >= static_cast<unsigned int>(this->TableVect.size()) || column >= static_cast<unsigned int>(this->TableVect[row].size()))
+                    throw IndexError("Table column index out of range.");
+    
+                return this->TableVect[row][column];
             }
     
             string Stringify(string alignment = "L") const {
@@ -223,15 +224,15 @@ namespace Ext {
                 if(!Table::IsIn(AllowedAlignments, alignment))
                     throw ValueError(std::format("Unknown alignment: {}.", alignment));
     
-                vector<int> LongestPerColumn = Table::Map(Table::Zip(this->TableVect), [](const vector<string> &Column) {
+                vector<unsigned int> LongestPerColumn = Table::Map(Table::Zip(this->TableVect), [](const vector<string> &Column) {
                     size_t maxlen = 0;
                     for(const auto &Cell : Column)
                         maxlen = std::max(maxlen, Cell.size());
-                    return static_cast<int>(maxlen);
+                    return static_cast<unsigned int>(maxlen);
                 });
-    
-                string Separator = "+" + ExtString::Join(Table::Map(LongestPerColumn,
-                    [](int Width) { return ExtString::Repeat("-", Width + 2); }), "+") + "+";
+                
+                string Separator = std::format("+{}+", ExtString::Join(Table::Map(LongestPerColumn,
+                    [](unsigned int Width) { return ExtString::Repeat("-", Width + 2); }), "+"));
     
                 vector<string> Output = {Separator};
     
@@ -245,7 +246,8 @@ namespace Ext {
                             CellStrings.push_back(ExtString::LJust(Cell, LongestPerColumn[j]));
                         else CellStrings.push_back(ExtString::Center(Cell, LongestPerColumn[j]));
                     }
-                    string RowStr = "| " + ExtString::Join(CellStrings, " | ") + " |";
+
+                    string RowStr = std::format("| {} |", ExtString::Join(CellStrings, " | "));
                     Output.push_back(RowStr);
                     Output.push_back(Separator);
                 }
