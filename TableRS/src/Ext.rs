@@ -144,11 +144,10 @@ pub mod Ext {
             
             return match type_.as_str() {
                 "Row" | "R" => Ok(self.TableVec[index].clone()),
-                "Column" | "C" => {
+                _ => {
                     let Zipped: Vec<Vec<String>> = Typing::Zip(&self.TableVec);
                     return Ok(Zipped[index].clone());
-                },
-                _ => unreachable!()
+                }
             };
         }
 
@@ -187,8 +186,7 @@ pub mod Ext {
                         match alignment.chars().next().unwrap().to_ascii_uppercase() {
                             'R' => std::format!("{: >Width$}", Cell),
                             'L' => std::format!("{: <Width$}", Cell),
-                            'C' => std::format!("{: ^Width$}", Cell),
-                            _ => unreachable!()
+                            _ => std::format!("{: ^Width$}", Cell)
                         }
                     })
                     .collect();

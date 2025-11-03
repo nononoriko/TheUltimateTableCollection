@@ -32,11 +32,10 @@ export default class Table {
 
         if(row <= 0 && column <= 0)
             throw new ValueError("Cannot create a table with 0 cells.");
-
-        if(row > 0 && column <= 0) 
-            column = 1;
-        else if(row <= 0 && column > 0) 
-            row = 1;
+        else if(column <= 0) 
+            throw new ValueError("Cannot create a table with 0 columns.");
+        else if(row <= 0) 
+            throw new ValueError("Cannot create a table with 0 rows.");
 
         while(this.#Table.length < row) 
             this.#Table.push([]);
@@ -45,7 +44,7 @@ export default class Table {
             while(this.#Table[i].length < column) {
                 this.#Table[i].push("");
             }
-        }
+        } 
     }
 
     /**
@@ -62,12 +61,15 @@ export default class Table {
             throw new TypeError("Every row in 'table' must be an array.");
 
         if(table.length === 0)
-            return new Table();
+            throw new ValueError("Cannot create a table with 0 rows.");
 
         /**
          * @type {number}
          */
         const NumberOfColumns = table[0].length;
+        if(NumberOfColumns === 0) {
+            throw new ValueError("Cannot create a table with 0 columns.");
+        }
         
         for(const [i, Row] of table.entries()) {
             if(Row.length !== NumberOfColumns) {
@@ -75,10 +77,6 @@ export default class Table {
             }
         }
         
-        if(NumberOfColumns === 0) {
-            return new Table(table.length);
-        }
-
         /**
          * @type {string[][]}
          */
@@ -191,8 +189,7 @@ export default class Table {
         if(this.#Table.length === 1 && type.startsWith("R") || this.#Table[0].length === 1 && type.startsWith("C"))
             throw new ValueError("Cannot remove the last row/column of the table.");
 
-        switch(type) {
-            case "Row":
+        switch(type[0]) {
             case "R":
                 this.#Table.splice(index, 1);
                 break;
@@ -219,8 +216,7 @@ export default class Table {
         if((type.startsWith("R") && index >= this.#Table.length || type.startsWith("C") && index >= this.#Table[0].length) || index < 0)
             throw new IndexError("Table index out of range.");
 
-        switch(type) {
-            case "Row":
+        switch(type[0]) {
             case "R":
                 return this.#Table[index];
                 

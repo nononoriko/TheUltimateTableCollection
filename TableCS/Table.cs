@@ -1,14 +1,15 @@
+using System.Data;
+
 namespace Ext;
 
 public class Table {
     Table(uint Row = 1, uint Column = 1) {
         if(Row == 0 && Column == 0)
-            throw new ArgumentOutOfRangeException(nameof(Row), "Cannot create a table with 0 cells.");
-
-        if(Row > 0 && Column == 0)
-            Column = 1;
-        else if(Row == 0 && Column > 0)
-            Row = 1;
+            throw new DataException("Cannot create a table with 0 cells.");
+        else if(Column == 0)
+            throw new ArgumentOutOfRangeException(nameof(Column), "Cannot create a table with 0 columns.");
+        else if(Row == 0)
+            throw new ArgumentOutOfRangeException(nameof(Row), "Cannot create a table with 0 rows.");
 
         while(this.TableList.Count < Row)
             TableList.Add([]);
@@ -21,19 +22,17 @@ public class Table {
     }
 
     public static Table Parse(List<List<string>> Table) {
-        if(Table.Count == 0) {
-            return new Table();
-        }
+        if(Table.Count == 0)
+            throw new ArgumentOutOfRangeException(nameof(Table), "Cannot create a table with 0 rows.");
 
         int NumberOfColumns = Table[0].Count;
+        if(NumberOfColumns == 0)
+            throw new ArgumentOutOfRangeException(nameof(Table), "Cannot create a table with 0 columns.");
+        
         foreach(var (Row, Index) in Table.Select((value, i) => (value, i))) {
             if(Row.Count != NumberOfColumns) {
-                throw new IndexOutOfRangeException($"Row {Index} has {Row.Count} columns, expected ${NumberOfColumns}.");
+                throw new IndexOutOfRangeException($"Row {Index} has {Row.Count} columns, expected {NumberOfColumns}.");
             }
-        }
-
-        if(NumberOfColumns == 0) {
-            return new Table((uint)Table.Count);
         }
 
         return new() {
@@ -49,26 +48,30 @@ public class Table {
             switch(Where) {
                 case "T":
                 case "Top":
-                    this.TableList.Insert(0, []);
+                    List<string> NewRow = [];
+                    for(int i = 0; i < this.TableList[0].Count; ++i)
+                        NewRow.Add("");
+                    this.TableList.Insert(0, NewRow);
                     break;
 
                 case "B":
                 case "Bottom":
-                    this.TableList.Add([]);
+                    List<string> NewRow1 = [];
+                    for(int i = 0; i < this.TableList[0].Count; ++i)
+                        NewRow1.Add("");
+                    this.TableList.Add(NewRow1);
                     break;
 
                 case "L":
                 case "Left":
-                    for(int i = 0; i < TableList.Count; ++i) {
+                    for(int i = 0; i < TableList.Count; ++i)
                         TableList[i].Insert(0, "");
-                    }
                     break;
 
                 case "R":
                 case "Right":
-                    for(int i = 0; i < TableList.Count; ++i) {
+                    for(int i = 0; i < TableList.Count; ++i)
                         TableList[i].Add("");
-                    }
                     break;
 
                 default:
@@ -95,9 +98,8 @@ public class Table {
         if(Type.StartsWith('R') && this.TableList.Count == 1 || Type.StartsWith('C') && this.TableList[0].Count == 1)
             throw new ArgumentOutOfRangeException(nameof(Index), "Cannot remove the last row/column of the table.");
 
-        switch(Type) {
-            case "R":
-            case "Row":
+        switch(Type[0]) {
+            case 'R':
                 this.TableList.RemoveAt((int)Index);
                 break;
 
@@ -116,8 +118,8 @@ public class Table {
         if(Type.StartsWith('R') && Index >= this.TableList.Count || Type.StartsWith('C') && Index >= this.TableList[0].Count)
             throw new ArgumentOutOfRangeException(nameof(Index), "Table index out of range.");
 
-        return Type switch {
-            "R" or "Row" => TableList[(int)Index],
+        return Type[0] switch {
+            'R' => this.TableList[(int)Index],
             _ => Ext.Zip(TableList)[(int)Index]
         };
     }

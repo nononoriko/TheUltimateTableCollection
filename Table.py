@@ -15,18 +15,12 @@ class Table:
         
         if row <= 0 and column <= 0:
             raise ValueError("Cannot create a table with 0 cells.")
-        
-        if row > 0 and column <= 0:
-            column = 1
-        elif row <= 0 and column > 0:
-            row = 1
+        elif column <= 0:
+            raise ValueError("Cannot create a table with 0 columns.")
+        elif row <= 0:
+            raise ValueError("Cannot create a table with 0 rows.")
 
-        while len(self.Table) < row:
-            self.Table.append([])
-        
-        for i in range(len(self.Table)):
-            while len(self.Table[i]) < column:
-                self.Table[i].append("")
+        self.Table = [[""] * row] * column
     
     @staticmethod
     def Parse(table: list[list[str]], cast: bool = False) -> Self:
@@ -42,9 +36,12 @@ class Table:
             raise TypeError("Every row in 'table' must be a list.")
         
         if len(table) == 0:
-            return Table()
+            raise ValueError("Cannot create a table with 0 rows.")
 
         NumberOfColumns: int = len(table[0])
+        if NumberOfColumns == 0:
+            raise ValueError("Cannot create a table with 0 columns.")
+
         for i, Row in enumerate(table):
             if len(Row) != NumberOfColumns:
                 raise ValueError(f"Row {i} has {len(Row)} columns, expected {NumberOfColumns}.")
