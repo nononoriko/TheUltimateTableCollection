@@ -39,12 +39,11 @@ pub mod Ext {
             if row < 1 && column < 1 {
                 return Err(ExtError::ValueError("Cannot create a table with 0 cells.".into()));
             }
-            
-            if row > 0 && column == 0 {
-                column = 1;
+            else if column == 0 {
+                return Err(ExtError::ValueError("Cannot create a table with 0 columns.".into()));
             }
-            else if row == 0 && column > 0 {
-                row = 1;
+            else if row == 0 {
+                return Err(ExtError::ValueError("Cannot create a table with 0 rows.".into()));
             }
     
             let TableVec: Vec<Vec<String>> = vec![vec![String::new(); column]; row];
@@ -55,10 +54,14 @@ pub mod Ext {
         ///Parse a 2D Vec into a Table.
         pub fn Parse(table: Vec<Vec<String>>) -> Result<Table, ExtError> {
             if table.is_empty() {
-                return Table::Table(1, 1);
+                return Err(ExtError::ValueError("Cannot create a table with 0 rows.".into()));
             }
     
             let NumberOfColumn: usize = table[0].len();
+            if NumberOfColumn == 0 {
+                return Err(ExtError::ValueError("Cannot create a table with 0 columns.".into()));
+            }
+
             for i in 0..table.len() {
                 if table[i].len() != NumberOfColumn {
                     return Err(ExtError::ValueError(std::format!("Row {} has {} column, expected {}.", i, table[i].len(), NumberOfColumn)));

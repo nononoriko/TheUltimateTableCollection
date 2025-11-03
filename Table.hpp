@@ -122,20 +122,22 @@ namespace Ext {
             Table(unsigned int row = 1, unsigned int column = 1) {
                 if(row <= 0 && column <= 0)
                     throw ValueError("Cannot create a table with 0 cells.");
-    
-                if(row > 0 && column == 0)
-                    column = 1;
-                else if(row == 0 && column > 0)
-                    row = 1;
+                else if(column == 0)
+                    throw ValueError("Cannot create a table with 0 columns.");
+                else if(row == 0)
+                    throw ValueError("Cannot create a table with 0 rows.");
     
                 this->TableVect.resize(row, vector<string>(column, ""));
             }
     
             static Table Parse(const vector<vector<string>> &table) {
                 if(table.empty())
-                    return Table();
+                    throw ValueError("Cannot create a table with 0 rows.");
     
                 const unsigned int NumberOfColumns = table[0].size();
+                if(NumberOfColumns == 0)
+                    throw ValueError("Cannot create a table with 0 columns.");
+
                 for(size_t i = 0; i < table.size(); ++i) {
                     if(table[i].size() != NumberOfColumns) {
                         throw ValueError(std::format("Row {} has {} columns, expected {}.", i, table[i].size(), NumberOfColumns));
