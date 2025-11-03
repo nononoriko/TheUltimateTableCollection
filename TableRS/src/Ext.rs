@@ -4,7 +4,7 @@
 pub mod Ext {
     use std::fmt;
 
-    pub struct Typing;
+    struct Typing;
     impl Typing {
         fn Zip<T: Clone>(data: &[Vec<T>]) -> Vec<Vec<T>> {
             if data.is_empty() {

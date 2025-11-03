@@ -16,7 +16,7 @@ export default class Table {
     /**
      * @type {string[][]}
      */
-    Table = [];
+    #Table = [];
 
     /**
      * Create a new 1x1 Table.
@@ -24,10 +24,10 @@ export default class Table {
      * @param {number} column 
      */
     constructor(row = 1, column = 1) {
-        if(Table.GetType(row) !== "int") 
+        if(Table.#GetType(row) !== "int") 
             throw new TypeError("Param row must be an int.");
         
-        if(Table.GetType(column) !== "int")
+        if(Table.#GetType(column) !== "int")
             throw new TypeError("Param column must be an int.");
 
         if(row <= 0 && column <= 0)
@@ -38,12 +38,12 @@ export default class Table {
         else if(row <= 0 && column > 0) 
             row = 1;
 
-        while(this.Table.length < row) 
-            this.Table.push([]);
+        while(this.#Table.length < row) 
+            this.#Table.push([]);
 
-        for(let i = 0; i < this.Table.length; ++i) {
-            while(this.Table[i].length < column) {
-                this.Table[i].push("");
+        for(let i = 0; i < this.#Table.length; ++i) {
+            while(this.#Table[i].length < column) {
+                this.#Table[i].push("");
             }
         }
     }
@@ -55,10 +55,10 @@ export default class Table {
      * @returns {Table}
      */
     static Parse = (table, cast = false) => {
-        if(Table.GetType(table) !== "array")
+        if(Table.#GetType(table) !== "array")
             throw new TypeError("Param table must be an array.");
 
-        if(table.every(Row => Table.GetType(Row) !== "array")) 
+        if(table.every(Row => Table.#GetType(Row) !== "array")) 
             throw new TypeError("Every row in 'table' must be an array.");
 
         if(table.length === 0)
@@ -89,7 +89,7 @@ export default class Table {
              */
             const NewRow = [];
             for(const [j, Cell] of Row.entries()) {
-                if(Table.GetType(Cell) !== "string") {
+                if(Table.#GetType(Cell) !== "string") {
                     if(cast) 
                         NewRow.push(String(Cell));
                     else throw new TypeError(`Cell (${i}, ${j}) must be a string.`);
@@ -113,7 +113,7 @@ export default class Table {
      * @param {number} count 
      */
     Add = (where, count = 1) => {
-        if(Table.GetType(count) !== "int")
+        if(Table.#GetType(count) !== "int")
             throw new TypeError("Param count must be an int.");
         
         if(count < 1)
@@ -123,25 +123,25 @@ export default class Table {
             switch(where) {
                 case "Top":
                 case "T":
-                    this.Table.splice(0, 0, Array(this.Table[0].length).fill(""));
+                    this.#Table.splice(0, 0, Array(this.#Table[0].length).fill(""));
                     break;
 
                 case "Bottom":
                 case "B":
-                    this.Table.push(Array(this.Table[0].length).fill(""));
+                    this.#Table.push(Array(this.#Table[0].length).fill(""));
                     break;
 
                 case "Left":
                 case "L":
-                    for(let i = 0; i < this.Table.length; ++i) {
-                        this.Table[i].splice(0, 0, "");
+                    for(let i = 0; i < this.#Table.length; ++i) {
+                        this.#Table[i].splice(0, 0, "");
                     }
                     break;
 
                 case "Right":
                 case "R":
-                    for(let i = 0; i < this.Table.length; ++i) {
-                        this.Table[i].push("");
+                    for(let i = 0; i < this.#Table.length; ++i) {
+                        this.#Table[i].push("");
                     }
                     break;
 
@@ -158,19 +158,19 @@ export default class Table {
      * @param {number} column 
      */
     Set = (value, row, column) => {
-        if(Table.GetType(value) !== "string") 
+        if(Table.#GetType(value) !== "string") 
             throw new TypeError("Param value must be a string.");
 
-        if(Table.GetType(row) !== "int") 
+        if(Table.#GetType(row) !== "int") 
             throw new TypeError("Param row must be an int.");
 
-        if(Table.GetType(column) !== "int") 
+        if(Table.#GetType(column) !== "int") 
             throw new TypeError("Param column must be an int.");
 
-        if((row > this.Table.length - 1 || row < 0) || (column > this.Table[row].length || column < 0))
+        if((row >= this.#Table.length || row < 0) || (column >= this.#Table[0].length || column < 0))
             throw new IndexError("Table index out of range.");
 
-        this.Table[row][column] = value;
+        this.#Table[row][column] = value;
     };
 
     /**
@@ -182,24 +182,24 @@ export default class Table {
         if(!["Row", "Column", "R", "C"].includes(type)) 
             throw new ValueError(`Unknown type: ${type}.`);
 
-        if(Table.GetType(index) !== "int")
+        if(Table.#GetType(index) !== "int")
             throw new TypeError("Param index has to be an int.");
 
-        if(type.startsWith("R") && index > this.Table.length - 1 || type.startsWith("C") && index > this.Table[0].length - 1)
+        if(type.startsWith("R") && index >= this.#Table.length || type.startsWith("C") && index >= this.#Table[0].length)
             throw new IndexError("Table index out of range.");
 
-        if(this.Table.length === 1 && type.startsWith("R") || this.Table[0].length === 1 && type.startsWith("C"))
+        if(this.#Table.length === 1 && type.startsWith("R") || this.#Table[0].length === 1 && type.startsWith("C"))
             throw new ValueError("Cannot remove the last row/column of the table.");
 
         switch(type) {
             case "Row":
             case "R":
-                this.Table.splice(index, 1);
+                this.#Table.splice(index, 1);
                 break;
 
             default:
-                for(let i = 0; i < this.Table.length; ++i)
-                    this.Table[i].splice(index, 1);
+                for(let i = 0; i < this.#Table.length; ++i)
+                    this.#Table[i].splice(index, 1);
                 break;
         }
     };
@@ -213,19 +213,19 @@ export default class Table {
         if(!["Row", "Column", "R", "C"].includes(type))
             throw new ValueError(`Unknown type: ${type}`);
         
-        if(Table.GetType(index) !== "int") 
+        if(Table.#GetType(index) !== "int") 
             throw new TypeError("Param index must be an int.");
         
-        if((type.startsWith("R") && index > this.Table.length - 1 || type.startsWith("C") && index > this.Table[0].length - 1) || index < 0)
+        if((type.startsWith("R") && index >= this.#Table.length || type.startsWith("C") && index >= this.#Table[0].length) || index < 0)
             throw new IndexError("Table index out of range.");
 
         switch(type) {
             case "Row":
             case "R":
-                return this.Table[index];
+                return this.#Table[index];
                 
             default:
-                return Table.Zip(this.Table)[index];
+                return Table.#Zip(this.#Table)[index];
         }
     };
 
@@ -236,16 +236,16 @@ export default class Table {
      * @returns {string}
      */
     Get = (row, column) => {
-        if(Table.GetType(row) !== "int") 
+        if(Table.#GetType(row) !== "int") 
             throw new TypeError("Param row must be an int.");
 
-        if(Table.GetType(column) !== "int") 
+        if(Table.#GetType(column) !== "int") 
             throw new TypeError("Param column must be an int.");
 
-        if((row > this.Table.length - 1 || row < 0) || (column > this.Table[row].length || column < 0))
+        if((row >= this.#Table.length || row < 0) || (column >= this.#Table[row].length || column < 0))
             throw new IndexError("Table index out of range.");
 
-        return this.Table[row][column];
+        return this.#Table[row][column];
     };
 
     /**
@@ -260,7 +260,7 @@ export default class Table {
         /**
          * @type {number[]}
          */
-        const LongestPerColumn = Table.Zip(...this.Table).map(Column => Math.max(...Column.map(Cell => Cell.length)));
+        const LongestPerColumn = Table.#Zip(...this.#Table).map(Column => Math.max(...Column.map(Cell => Cell.length)));
         /**
          * @type {string}
          */
@@ -270,14 +270,14 @@ export default class Table {
          */
         const Output = [Seperator];
 
-        for(let Row = 0; Row < this.Table.length; ++Row) {
+        for(const Row of this.#Table) {
             /**
              * @type {string[]}
              */
-            const CellStrings = [...this.Table[Row].entries()].map(([Column, Cell]) => 
+            const CellStrings = [...Row.entries()].map(([Column, Cell]) => 
                 alignment.startsWith("R") ? Cell.padStart(LongestPerColumn[Column]) : 
                 alignment.startsWith("L") ? Cell.padEnd(LongestPerColumn[Column]) : 
-                Table.Center(Cell, LongestPerColumn[Column])
+                Table.#Center(Cell, LongestPerColumn[Column])
             );
             /**
              * @type {string}
@@ -295,7 +295,7 @@ export default class Table {
      * @returns {string}
      */
     HTMLify = (spaces = 4, header = true) => {
-        if(Table.GetType(spaces) !== "int")
+        if(Table.#GetType(spaces) !== "int")
             throw new TypeError("Parameter 'spaces' must be an integer.");
         
         if(spaces < 0)
@@ -316,9 +316,9 @@ export default class Table {
 
         Lines.push("<table>");
 
-        for(let r = 0; r < this.Table.length; r++) {
+        for(let r = 0; r < this.#Table.length; r++) {
             Lines.push(`${Newline}${Indent}<tr>`);
-            for(const cell of this.Table[r]) {
+            for(const cell of this.#Table[r]) {
                 const tag = header && r === 0 ? "th" : "td";
                 Lines.push(`${Newline}${Indent.repeat(2)}<${tag}>${EscapeHTML(cell)}</${tag}>`);
             }
@@ -334,7 +334,7 @@ export default class Table {
      * @param {any} object 
      * @returns The true type of the object. null, array, int, float, infinities, and NaN included.
      */
-    static GetType = (object) => {
+    static #GetType = (object) => {
         switch(object) {
             case null:
                 return "null";
@@ -366,23 +366,23 @@ export default class Table {
      * @param {number} width 
      * @param {string} pad 
      */
-    static Center = (string, width, pad = " ") => {
-        if(Table.GetType(string) !== "string")
+    static #Center = (string, width, pad = " ") => {
+        if(Table.#GetType(string) !== "string")
             throw new TypeError("Param string must be a string.");
 
-        if(Table.GetType(pad) !== "string")
+        if(Table.#GetType(pad) !== "string")
             throw new TypeError("Param pad must be a string.");
 
-        if(Table.GetType(width) !== "int")
+        if(Table.#GetType(width) !== "int")
             throw new TypeError("Param width must be an int.");
 
         const TotalPadding = width - string.length;
         const Left = Math.floor(TotalPadding / 2);
         const Right = TotalPadding - Left;
-        return pad.repeat(Left) + string + pad.repeat(Right);
+        return `${pad.repeat(Left)}${string}${pad.repeat(Right)}`;
     }
 
-    static Zip = (...Iterators) => {
+    static #Zip = (...Iterators) => {
         const length = Math.min(...Iterators.map(It => It.length));
         return Array.from({ length }, (_, i) => Iterators.map(It => It[i]));
     };

@@ -123,7 +123,7 @@ class Table:
         if not isinstance(index, int):
             raise TypeError("Param index must be an int.")
         
-        if type.startswith("R") and index > len(self.Table) - 1 or type.startswith("C") and index > len(self.Table[0]) - 1:
+        if type.startswith("R") and index >= len(self.Table) or type.startswith("C") and index >= len(self.Table[0]):
             raise IndexError("Table index out of range.")
         
         if len(self.Table) == 1 and type.startswith("R") or len(self.Table[0]) == 1 and type.startswith("C"):
@@ -146,7 +146,7 @@ class Table:
         if not isinstance(index, int):
             raise TypeError("Param index must be an int.")
         
-        if index > len(self.Table) - 1 and type.startswith("R") or index > len(self.Table[0]) and type.startswith("C"):
+        if index >= len(self.Table) and type.startswith("R") or index >= len(self.Table[0]) and type.startswith("C"):
             raise IndexError("Table index out of range.")
         
         match type:
