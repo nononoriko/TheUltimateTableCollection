@@ -1,4 +1,5 @@
 from typing import Literal, Self
+from copy import deepcopy
 
 class Table:
     Table: list[list[str]] = []
@@ -23,7 +24,7 @@ class Table:
         self.Table = [[""] * row] * column
     
     @staticmethod
-    def Parse(table: list[list[str]], cast: bool = False) -> Self:
+    def Parse(table: list[list[str]]) -> Self:
         """
         Parse a 2D list into a Table object.
 
@@ -46,47 +47,47 @@ class Table:
             if len(Row) != NumberOfColumns:
                 raise ValueError(f"Row {i} has {len(Row)} columns, expected {NumberOfColumns}.")
 
-        ProcessedTable: list[list[str]] = []
         for i, Row in enumerate(table):
-            NewRow: list[str] = []
             for j, Cell in enumerate(Row):
                 if not isinstance(Cell, str):
-                    if cast:
-                        NewRow.append(str(Cell))
-                    else:
-                        raise TypeError(f"Cell ({i}, {j}) must be a str, got {type(Cell).__name__}.")
-                else:
-                    NewRow.append(Cell)
-            ProcessedTable.append(NewRow)
+                    raise TypeError(f"Cell ({i}, {j}) must be a str, got {type(Cell).__name__}.")
 
         New: Table = Table()
-        New.Table = ProcessedTable
+        New.Table = table
         return New
-
-    def Add(self, where: Literal["Top", "Bottom", "Left", "Right", "T", "L", "B", "R"], count: int = 1) -> None:
+    
+    def AddRow(self, index: int = -1, count: int = 1) -> None:
         """
-        Add a row/column to the table. Pass "Top" and "Bottom" to where to add rows, pass "Left" and "Right" to where to add column.
+        Add a row at index. Note: If index is greater than GetLength() - 1 then this function will append the rows instead.
         """
         if not isinstance(count, int):
             raise TypeError("Param count must be an int.")
+        
+        if not isinstance(index, int):
+            raise TypeError("Param index must be an int.")
         
         if count < 1:
             raise ValueError("count must be more than 0.")
         
         for _ in range(count):
-            match where:
-                case "Top" | "T":
-                    self.Table.insert(0, [""] * len(self.Table[0]))
-                case "Bottom" | "B":
-                    self.Table.append([""] * len(self.Table[0]))
-                case "Left" | "L":
-                    for i in range(len(self.Table)):
-                        self.Table[i].append("")
-                case "Right" | "R":
-                    for i in range(len(self.Table)):
-                        self.Table[i].insert(0, "")
-                case _:
-                    raise ValueError(f"Unknown direction: {where}.")
+            self.Table.insert(index, [""] * self.GetWidth())
+
+    def AddColumn(self, index: int = -1, count: int = 1) -> None:
+        """
+        Add a column at index. Note: If index is greater than GetWidth() - 1 then this function will append the columns instead.
+        """
+        if not isinstance(count, int):
+            raise TypeError("Param count must be an int.")
+        
+        if not isinstance(index, int):
+            raise TypeError("Param index must be an int.")
+        
+        if count < 1:
+            raise ValueError("count must be more than 0.")
+        
+        for _ in range(count):
+            for Row in self.Table:
+                Row.insert(index, "")
             
     def Set(self, value: str, row: int, column: int) -> None:
         """
@@ -101,56 +102,77 @@ class Table:
         if not isinstance(column, int):
             raise TypeError("Param column must be an int.")
         
-        if row > len(self.Table) - 1:
-            raise IndexError("Table row index out of range.")
-        
-        if column > len(self.Table[row]) - 1:
-            raise IndexError("Table column index out of range.")
+        if row >= self.GetLength() or column >= self.GetWidth():
+            raise IndexError("Table index out of range.")
 
         self.Table[row][column] = value
 
-
-    def Delete(self, type: Literal["Row", "Column", "R", "C"], index: int) -> None:
+    def DeleteRow(self, index: int) -> None:
         """
-        Delete a row/column at index. This uses 0-based indexing.
+        Delete the row at index.
         """
-        if type not in ["Row", "Column", "R", "C"]:
-            raise ValueError(f"Unknown type: {type}.")
-        
         if not isinstance(index, int):
             raise TypeError("Param index must be an int.")
         
-        if type.startswith("R") and index >= len(self.Table) or type.startswith("C") and index >= len(self.Table[0]):
-            raise IndexError("Table index out of range.")
+        if index >= self.GetLength():
+            raise IndexError("Table row index out of range.")
         
-        if len(self.Table) == 1 and type.startswith("R") or len(self.Table[0]) == 1 and type.startswith("C"):
-            raise ValueError(f"Cannot remove the last row/column of the table.")
-
-        match type:
-            case "Column" | "C":
-                for i in range(len(self.Table)):
-                    self.Table[i].pop(index)
-            case _:
-                self.Table.pop(index)
-
-    def GetLine(self, type: Literal["Row", "Column", "R", "C"], index: int) -> list[str]:
-        """
-        Get a column or row of the table.
-        """
-        if type not in ["Row", "Column", "R", "C"]:
-            raise ValueError(f"Unknown type: {type}")
+        if self.GetLength() == 1:
+            raise ValueError(f"Cannot remove the last row of the table.")
         
+        self.Table.pop(index)
+        
+    def DeleteColumn(self, index: int) -> None:
+        """
+        Delete the column at index.
+        """
         if not isinstance(index, int):
             raise TypeError("Param index must be an int.")
         
-        if index >= len(self.Table) and type.startswith("R") or index >= len(self.Table[0]) and type.startswith("C"):
+        if index >= self.GetWidth():
+            raise IndexError("Table column index out of range.")
+        
+        if self.GetWidth() == 1:
+            raise ValueError("Cannot remove the last column of the table.")
+        
+        for i in range(self.GetLength()):
+            self.Table[i].pop(index)
+
+    def GetLength(self) -> int:
+        """
+        Get the amount of rows in the table.
+        """
+        return self.GetLength()
+
+    def GetWidth(self) -> int:
+        """
+        Get the aoumt of columns in the table.
+        """
+        return len(zip(self.Table))
+        
+    def GetRow(self, index: int) -> list[str]:
+        """
+        Get the row at index.
+        """
+        if not isinstance(index, int):
+            raise TypeError("Param index must be an int.")
+        
+        if index >= self.GetLength():
             raise IndexError("Table index out of range.")
         
-        match type:
-            case "Row" | "R":
-                return self.Table[index]
-            case _:
-                return list(list(zip(*self.Table))[index])
+        return deepcopy(self.Table[index])
+    
+    def GetColumn(self, index: int) -> list[str]:
+        """
+        Get the column at index.
+        """
+        if not isinstance(index, int):
+            raise TypeError("Param index must be an int.")
+        
+        if index >= self.GetWidth():
+            raise IndexError("Table index out of range.")
+        
+        return list(list(zip(*self.Table))[index])
 
     def Get(self, row: int, column: int) -> str:
         """
@@ -162,15 +184,15 @@ class Table:
         if not isinstance(column, int):
             raise TypeError("Param column must be an int.")
         
-        if row > len(self.Table) - 1:
-            raise IndexError("Row index out of range.")
-        
-        if column > len(self.Table[row]) - 1:
-            raise IndexError("Column index out of range.")
+        if row >= self.GetLength() or column >= self.GetWidth():
+            raise IndexError("Table index out of range.")
         
         return self.Table[row][column]
 
     def Stringify(self, alignment: Literal["Left", "Right", "Center", "L", "R", "C"] = "L") -> str:
+        """
+        Turn the table into a spreadsheet string.
+        """
         if alignment not in ["Left", "Right", "Center", "L", "R", "C"]:
             raise ValueError(f"Unknown alignment: {alignment}.")
         
@@ -178,18 +200,24 @@ class Table:
         Seperator: str = f"+{'+'.join("-" * (Width + 2) for Width in LongestPerColumn)}+"
         Output: list[str] = [Seperator]
 
-        for Row in range(len(self.Table)):
+        for Row in self.Table:
             CellStrings: list[str] = [
                 Cell.rjust(LongestPerColumn[Column]) if alignment.startswith("R")
                 else Cell.ljust(LongestPerColumn[Column]) if alignment.startswith("L")
                 else Cell.center(LongestPerColumn[Column])
-                for Column, Cell in enumerate(self.Table[Row])
+                for Column, Cell in enumerate(Row)
             ]
             RowString: str = f"| {' | '.join(CellStrings)} |"
             Output.append(RowString)
             Output.append(Seperator)
 
         return "\n".join(Output)
+    
+    def CSVify(self) -> str:
+        """
+        Turn the table into a CSV string.
+        """
+        return "\n".join(",".join(Row) for Row in self.Table)
 
     def __str__(self) -> str:
         return self.Stringify()

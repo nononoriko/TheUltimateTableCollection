@@ -198,8 +198,8 @@ class Ext {
         if(Lists == null || Lists.isEmpty()) 
             return List.of();
 
-        int minSize = Lists.stream().mapToInt(List::size).min().orElse(0);
-        return IntStream.range(0, minSize).mapToObj(Index -> Lists.stream().map(List -> List.get(Index)).collect(Collectors.toList())).collect(Collectors.toList());
+        int MinSize = Lists.stream().mapToInt(List::size).min().orElse(0);
+        return IntStream.range(0, MinSize).mapToObj(Index -> Lists.stream().map(List -> List.get(Index)).collect(Collectors.toList())).collect(Collectors.toList());
     }
 
     public static String LJust(String Str, int Width, char Padding) {
