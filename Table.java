@@ -20,14 +20,11 @@ public class Table {
     }
 
     public Table(int Row) {
-        if(Row <= 0)
-            throw new Illegal­Argument­Exception("Cannot create a table with 0 rows.");
-        
-        this.TableList = new ArrayList<>(Collections.nCopies(Row, new ArrayList<>(Collections.nCopies(1, ""))));
+        this(Row, 1);
     }
 
     public Table() {
-        this.TableList = new ArrayList<>(Collections.nCopies(1, new ArrayList<>(Collections.nCopies(1, ""))));
+        this(1);
     }
 
     public static Table Parse(List<List<String>> Table) {
@@ -52,92 +49,77 @@ public class Table {
         return New;
     }
 
-    public void Add(String Where, int Count) {
-        if(Count <= 0)
-            throw new Illegal­Argument­Exception("Count cannot be less than 0.");
+    public void AddRow(int Index, int Count) {
+        for(int i = 0; i < Count; i++) {
+            this.TableList.add(new ArrayList<>(Collections.nCopies(this.GetLength(), "")));
+        }
+    }
 
-        for(int i = 0; i < Count; ++i) {
-            switch(Where.charAt(0)) {
-                case 'T' -> this.TableList.add(0, new ArrayList<>(Collections.nCopies(this.TableList.get(0).size(), "")));
-                case 'B' -> this.TableList.add(new ArrayList<>(Collections.nCopies(this.TableList.get(0).size(), "")));
-                
-                case 'L' -> {
-                    for(List<String> Row : this.TableList)
-                        Row.add(0, "");
-                }
-                case 'R' -> {
-                    for(List<String> Row : this.TableList)
-                        Row.add("");
-                }
-                
-                default -> throw new Illegal­Argument­Exception(String.format("Unknown direction: %s.", Where));
+    public void AddColumn(int Index, int Count) {
+        for(List<String> Row : this.TableList) {
+            for(int i = 0; i < Count; i++) {
+                Row.add("");
             }
         }
     }
 
-    public void Add(String Where) {
-        this.Add(Where, 1);
+    public void AddRow(int Index) {
+        this.AddRow(Index, 1);
+    }
+
+    public void AddColumn(int Index) {
+        this.AddColumn(Index, 1);
     }
 
     public void Set(String Value, int Row, int Column) {
-        if(Row >= this.TableList.size() && Row < 0 || Column >= this.TableList.size() && Column < 0)
-            throw new Array­Index­Out­Of­Bounds­Exception("Table index out of range.");
-        
         this.TableList.get(Row).set(Column, Value);
     }
 
-    public void Delete(String Type, int Index) {
-        List<String> AllowedTypes = Arrays.asList(new String[] { "Row", "Column", "R", "C" });
-        if(!AllowedTypes.contains(Type))
-            throw new Illegal­Argument­Exception(String.format("Unknown type: %s.", Type));
+    public void DeleteRow(int Index) {
+        this.TableList.remove(Index);
+    }
 
-        if((Type.startsWith("R") && Index >= this.TableList.size() || Type.startsWith("C") && Index >= this.TableList.get(0).size()) || Index < 0)
-            throw new Array­Index­Out­Of­Bounds­Exception("Table index out of range.");
-
-        if(Type.startsWith("R") && this.TableList.size() == 1 || Type.startsWith("C") && this.TableList.get(0).size() == 1)
-            throw new Illegal­Argument­Exception("Cannot remove the last row/column of the table.");
-
-        switch(Type.charAt(0)) {
-            case 'R' -> this.TableList.remove(Index);
-            default -> {
-                for(List<String> Row : this.TableList) {
-                    Row.remove(Index);
-                }
-            }
+    public void DeleteColumn(int Index) {
+        for(List<String> Row : this.TableList) {
+            Row.remove(Index);
         }
     }
 
-    public List<String> GetLine(String Type, int Index) {
-        List<String> AllowedTypes = Arrays.asList(new String[] { "Row", "Column", "R", "C" });
-        if(!AllowedTypes.contains(Type))
-            throw new Illegal­Argument­Exception(String.format("Unknown type: %s.", Type));
+    public int GetLength() {
+        return this.TableList.size();
+    }
 
-        if((Type.startsWith("R") && Index >= this.TableList.size() || Type.startsWith("C") && Index >= this.TableList.get(0).size()) || Index < 0)
-            throw new Array­Index­Out­Of­Bounds­Exception("Table index out of range.");
-        
-        return switch(Type.charAt(0)) {
-            case 'R' -> this.TableList.get(Index);
-            default -> Ext.Zip(this.TableList).get(Index);
-        };
+    public int GetWidth() {
+        return Ext.Zip(this.TableList).size();
+    }
+
+    public List<String> GetRow(int Index) {
+        return this.TableList.get(Index);
+    }
+
+    public List<String> GetColumn(int Index) {
+        return Ext.Zip(this.TableList).get(Index);
     }
 
     public String Get(int Row, int Column) {
-        if(Row >= this.TableList.size() || Row < 0 || Column >= this.TableList.get(0).size() || Column < 0)
-            throw new Array­Index­Out­Of­Bounds­Exception("Table index out of range.");
-
         return this.TableList.get(Row).get(Column);
     }
 
-    
     public String Stringify(String Alignment) {
         List<String> AllowedAlignments = Arrays.asList(new String[] { "Left", "Right", "Center", "L", "R", "C" });
         if(!AllowedAlignments.contains(Alignment))
             throw new Illegal­Argument­Exception(String.format("Unknown alignment: %s.", Alignment));
 
         List<Integer> LongestPerColumn = Ext.Zip(this.TableList).stream().map(Column -> Collections.max(Column.stream().map(Cell -> Cell.length()).collect(Collectors.toList()))).collect(Collectors.toList());
-        String Seperator = String.format("+%s+", String.join("+", LongestPerColumn.stream().map(Width -> "-".repeat(Width + 2)).collect(Collectors.toList())));
+
+        String FirstSeparator = String.format("┌%s┐", String.join("┬", LongestPerColumn.stream().map(Width -> "─".repeat(Width + 2)).collect(Collectors.toList())));
+        String Separator = String.format("├%s┤", String.join("┼", LongestPerColumn.stream().map(Width -> "─".repeat(Width + 2)).collect(Collectors.toList())));
+        String LastSeparator = String.format("└%s┘", String.join("┴", LongestPerColumn.stream().map(Width -> "─".repeat(Width + 2)).collect(Collectors.toList())));
+
         List<String> Output = new ArrayList<>();
-        Output.add(Seperator);
+        Output.add(FirstSeparator);
+
+        int Iteration = 0;
         for(List<String> Row : this.TableList) {
             List<String> CellStrings = new ArrayList<>();
             for(int i = 0; i < Row.size(); ++i) {
@@ -150,8 +132,12 @@ public class Table {
                 };
                 CellStrings.add(Formatted);
             }
-            Output.add(String.format("| %s |", String.join(" | ", CellStrings)));
-            Output.add(Seperator);
+            Output.add(String.format("│ %s │", String.join(" │ ", CellStrings)));
+
+            if(Iteration == this.GetLength() - 1)
+                Output.add(LastSeparator);
+            else Output.add(Separator);
+            Iteration += 1;
         }
         return String.join("\n", Output);
     }
@@ -160,7 +146,11 @@ public class Table {
         return this.Stringify("L");
     }
 
-    /* For testing purpose
+    public String CSVify() {
+        return String.join("\n", this.TableList.stream().map(Row -> String.join(",", Row)).collect(Collectors.toList()));
+    }
+
+    /* /*For testing purpose
     public static void main(String[] Args) {
         Table table;
         try {

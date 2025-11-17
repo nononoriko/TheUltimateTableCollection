@@ -3,6 +3,7 @@
 #[allow(private_interfaces)]
 pub mod Ext {
     use std::fmt;
+    use std::cmp;
 
     struct Typing;
     impl Typing {
@@ -10,7 +11,11 @@ pub mod Ext {
             if data.is_empty() {
                 return vec![];
             }
-            return (0..data[0].len()).map(|i| data.iter().map(|row| row[i].clone()).collect()).collect();
+            return (0..data[0].len()).map(|i: usize| data.iter().map(|row: &Vec<T>| row[i].clone()).collect()).collect();
+        }
+
+        fn Clamp<T: Ord>(number: T, min: T, max: T) -> T {
+            return cmp::min(cmp::max(number, min), max);
         }
     }
 
@@ -35,7 +40,7 @@ pub mod Ext {
     
     impl Table {
         /// Constructs a 1x1 table.
-        pub fn Table(mut row: usize, mut column: usize) -> Result<Table, ExtError> {
+        pub fn Table(row: usize, column: usize) -> Result<Table, ExtError> {
             if row < 1 && column < 1 {
                 return Err(ExtError::ValueError("Cannot create a table with 0 cells.".into()));
             }
@@ -70,97 +75,82 @@ pub mod Ext {
     
             return Ok(Self { TableVec: table });
         }
-        
-        ///Add rows/columns. Top and Bottom add rows, Left and Right add columns.
-        pub fn Add(&mut self, where_: String, count: u32) -> Result<(), ExtError> {
+
+        ///Add rows.
+        pub fn AddRow(&mut self, index: usize, count: u32) -> Result<(), ExtError> {
             if count < 1 {
-                return Err(ExtError::ValueError("count must be greater than 0.".into()));
+                return Err(ExtError::ValueError("count must be more than 0.".into()));
             }
             
             for _ in 0..count {
-                match where_.as_str() {
-                    "T" | "Top" => self.TableVec.insert(0,vec!["".into(); self.TableVec[0].len()]),
-                    "B" | "Bottom" => self.TableVec.push(vec!["".into(); self.TableVec[0].len()]),
-                    "R" | "Right" => {
-                        for Row in 0..self.TableVec.len() {
-                            self.TableVec[Row].push("".into());
-                        }
-                    },
-                    "L" | "Left" => {
-                        for Row in 0..self.TableVec.len() {
-                            self.TableVec[Row].insert(0, "".into());   
-                        }
-                    },
-                    _ => return Err(ExtError::ValueError(std::format!("Unknown direction: {}.", where_)))
+                self.TableVec.insert(Typing::Clamp(index, 0, self.GetLength()), vec!["".into(); self.GetWidth()]);
+            }
+            return Ok(());
+        }
+
+        ///Add columns.
+        pub fn AddColumn(&mut self, index: usize, count: u32) -> Result<(), ExtError> {
+            if count < 1 {
+                return Err(ExtError::ValueError("count must be more than 0.".into()));
+            }
+            
+            for Row in 0..self.GetWidth() {
+                for _ in 0..count {
+                    self.TableVec[Row].insert(index, "".into());
                 }
             }
-    
+
             return Ok(());
         }
 
         ///Set a cell's value.
-        pub fn Set(&mut self, value: String, row: usize, column: usize) -> Result<(), ExtError> {
-            if row >= self.TableVec.len() || column >= self.TableVec[0].len() {
-                return Err(ExtError::IndexError("Table index out of range.".into()));
+        pub fn Set(&mut self, value: String, row: usize, column: usize) {
+            self.TableVec[row][column] = value;
+        }
+
+        ///Remove the row at index.
+        pub fn DeleteRow(&mut self, index: usize) -> Result<(), ExtError> {
+            if self.GetLength() == 1 {
+                return Err(ExtError::ValueError("Cannot remove the last row of the table.".into()));
             }
 
-            self.TableVec[row][column] = value;
+            self.TableVec.remove(index);
             return Ok(());
         }
 
-        ///Delete a row/column.
-        pub fn Delete(&mut self, type_: String, index: usize) -> Result<(), ExtError> {
-            let AllowedType: Vec<String> = vec!["Row".into(), "R".into(), "Column".into(), "C".into()];
-            if !AllowedType.contains(&type_) {
-                return Err(ExtError::ValueError(std::format!("Unknow type: {}", type_)));
+        ///Remove the coulumn at index.
+        pub fn DeleteColumn(&mut self, index: usize) -> Result<(), ExtError> {
+            if self.GetWidth() == 1 {
+                return Err(ExtError::ValueError("Cannot remove the last column of the table.".into()));
             }
 
-            if self.TableVec.len() == 1 && type_.starts_with("R") || self.TableVec[0].len() == 1 && type_.starts_with("C") {
-                return Err(ExtError::ValueError("Cannot remove the last row/column of the table.".into()));
-            }
-
-            if type_.starts_with("R") && index >= self.TableVec.len() || type_.starts_with("C") && index >= self.TableVec[0].len() {
-                return Err(ExtError::IndexError("Table index out of range.".into()));
-            }
-
-            if type_.starts_with("R") {
-                self.TableVec.remove(index);
-                return Ok(());
-            }
-
-            for i in 0..self.TableVec.len() {
+            for i in 0..self.GetLength() {
                 self.TableVec[i].remove(index);
             }
             return Ok(());
         }
 
-        ///Get the content of a row/column in a Vec.
-        pub fn GetLine(&self, type_: String, index: usize) -> Result<Vec<String>, ExtError> {
-            let AllowedType: Vec<String> = vec!["Row".into(), "R".into(), "Column".into(), "C".into()];
-            if !AllowedType.contains(&type_) {
-                return Err(ExtError::ValueError(std::format!("Unknow type: {}.", type_)));
-            }
-
-            if type_.starts_with("R") && index >= self.TableVec.len() || type_.starts_with("C") && index >= self.TableVec[0].len() {
-                return Err(ExtError::IndexError("Table index out of range.".into()));
-            }
-            
-            return match type_.as_str() {
-                "Row" | "R" => Ok(self.TableVec[index].clone()),
-                _ => {
-                    let Zipped: Vec<Vec<String>> = Typing::Zip(&self.TableVec);
-                    return Ok(Zipped[index].clone());
-                }
-            };
+        ///Get the content of a cell at row and column.
+        pub fn Get(&self, row: usize, column: usize) -> String {
+            return self.TableVec[row][column].clone();
         }
 
-        ///Get the content of a cell at row and column.
-        pub fn Get(&self, row: usize, column: usize) -> Result<String, ExtError> {
-            if row >= self.TableVec.len() || column >= self.TableVec[0].len() {
-                return Err(ExtError::IndexError("Table index out of range.".into()));
-            }
+        ///Get the amount of rows in the table.
+        pub fn GetLength(&self) -> usize {
+            return self.TableVec.len();
+        }
 
-            return Ok(self.TableVec[row][column].clone());
+        ///Get the amount of columns in the table.
+        pub fn GetWidth(&self) -> usize {
+            return Typing::Zip(&self.TableVec).len();
+        }
+
+        pub fn GetRow(&self, index: usize) -> Vec<String> {
+            return self.TableVec[index].clone();
+        }
+
+        pub fn GetColumn(&self, index: usize) -> Vec<String> {
+            return Typing::Zip(&self.TableVec)[index].clone();
         }
 
         ///Parse the table into a spreadsheet.
@@ -169,35 +159,59 @@ pub mod Ext {
             if !AllowedType.contains(&alignment) {
                 return Err(ExtError::ValueError(std::format!("Unknow alignment: {}.", alignment)));
             }
-            let LongestPerColumn: Vec<usize> = 
-                Typing::Zip(&self.TableVec)
+
+            let LongestPerColumn: Vec<usize> = Typing::Zip(&self.TableVec)
                 .iter()
                 .map(|Column: &Vec<String>| Column.iter().map(|Cell: &String| Cell.len()).max().unwrap_or(0))
                 .collect();
-            let Seperator: String = std::format!("+{}+", 
+            
+            let FirstSeparator: String = std::format!("┌{}┐", 
                 LongestPerColumn
                 .iter()
-                .map(|Width| "-".repeat(Width + 2))
-                .collect::<Vec<String>>().join("+")
+                .map(|Width| "─".repeat(Width + 2))
+                .collect::<Vec<String>>().join("┬")
             );
-            let mut Output: Vec<String> = vec![Seperator.clone()];
 
-            for Row in 0..self.TableVec.len() {
+            let Separator: String = std::format!("├{}┤", 
+                LongestPerColumn
+                .iter()
+                .map(|Width| "─".repeat(Width + 2))
+                .collect::<Vec<String>>().join("┼")
+            );
+
+            let LastSeparator: String = std::format!("└{}┘", 
+                LongestPerColumn
+                .iter()
+                .map(|Width| "─".repeat(Width + 2))
+                .collect::<Vec<String>>().join("┴")
+            );
+
+            let mut Output: Vec<String> = vec![FirstSeparator];
+
+            for Row in 0..self.GetLength() {
                 let CellStrings: Vec<String> = 
                     self.TableVec[Row].iter().enumerate().map(|(Column, Cell)| {
                         let Width: usize = LongestPerColumn[Column];
-                        match alignment.chars().next().unwrap().to_ascii_uppercase() {
+                        return match alignment.chars().next().unwrap().to_ascii_uppercase() {
                             'R' => std::format!("{: >Width$}", Cell),
                             'L' => std::format!("{: <Width$}", Cell),
                             _ => std::format!("{: ^Width$}", Cell)
-                        }
+                        };
                     })
                     .collect();
-                let RowString: String = std::format!("| {} |", CellStrings.join(" | "));
+                let RowString: String = std::format!("│ {} │", CellStrings.join(" │ "));
                 Output.push(RowString);
-                Output.push(Seperator.clone());
+
+                if Row < self.GetLength() - 1 {
+                    Output.push(Separator.clone());
+                }
             }
+            Output.push(LastSeparator);
             return Ok(Output.join("\n"));
+        }
+
+        pub fn CSVify(&self) -> String {
+            return self.TableVec.iter().map(|Row: &Vec<String>| Row.join(",")).collect::<Vec<String>>().join("\n");
         }
     }
 }

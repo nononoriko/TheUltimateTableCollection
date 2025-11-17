@@ -11,14 +11,7 @@ public class Table {
         else if(Row == 0)
             throw new ArgumentOutOfRangeException(nameof(Row), "Cannot create a table with 0 rows.");
 
-        while(this.TableList.Count < Row)
-            TableList.Add([]);
-
-        for(int i = 0; i < this.TableList.Count; ++i) {
-            while(this.TableList[i].Count < Column) {
-                this.TableList[i].Add("");
-            }
-        }
+        TableList = [.. Enumerable.Repeat<List<string>>([.. Enumerable.Repeat("", (int)Column)], (int)Row)];
     }
 
     public static Table Parse(List<List<string>> Table) {
@@ -40,107 +33,66 @@ public class Table {
         };
     }
 
-    public void Add(string Where, uint Count = 1) {
+    public void AddRow(uint Index, uint Count = 1) {
         if(Count == 0)
             throw new IndexOutOfRangeException("count must be greater than 0.");
 
-        for(uint _ = 0; _ < Count; ++_) {
-            switch(Where) {
-                case "T":
-                case "Top":
-                    List<string> NewRow = [];
-                    for(int i = 0; i < this.TableList[0].Count; ++i)
-                        NewRow.Add("");
-                    this.TableList.Insert(0, NewRow);
-                    break;
+        for(int _ = 0; _ < Count; _++) {
+            this.TableList.Insert((int)Index, [.. Enumerable.Repeat("", this.GetLength())]);
+        }
+    }
 
-                case "B":
-                case "Bottom":
-                    List<string> NewRow1 = [];
-                    for(int i = 0; i < this.TableList[0].Count; ++i)
-                        NewRow1.Add("");
-                    this.TableList.Add(NewRow1);
-                    break;
+    public void AddColumn(uint Index, uint Count = 1) {
+        if(Count == 0)
+            throw new IndexOutOfRangeException("count must be greater than 0.");
 
-                case "L":
-                case "Left":
-                    for(int i = 0; i < TableList.Count; ++i)
-                        TableList[i].Insert(0, "");
-                    break;
-
-                case "R":
-                case "Right":
-                    for(int i = 0; i < TableList.Count; ++i)
-                        TableList[i].Add("");
-                    break;
-
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(Where), $"Unknown direction: {Where}");
+        foreach(List<string> Row in this.TableList) {
+            for(uint _ = 0; _ < Count; ++_) {
+                Row.Insert((int)Index, "");
             }
         }
     }
 
-    public void Set(string Value, uint Row, uint Column) {
-        if(Row >= this.TableList.Count || Column >= this.TableList[0].Count)
-            throw new ArgumentOutOfRangeException(nameof(Row), "Table index out of range.");
+    public void Set(string Value, uint Row, uint Column) => this.TableList[(int)Row][(int)Column] = Value;
+    
+    public void DeleteRow(uint Index) {
+        if(this.GetLength() == 1)
+            throw new ArgumentOutOfRangeException(nameof(Index), "Cannot remove the last row of the table.");
 
-        this.TableList[(int)Row][(int)Column] = Value;
+        this.TableList.RemoveAt((int)Index);
     }
 
-    public void Delete(string Type, uint Index) {
-        string[] AllowedTypes = ["Row", "Column", "R", "C"];
-        if(!AllowedTypes.Contains(Type))
-            throw new ArgumentOutOfRangeException(nameof(Type), $"Unknown type: {Type}.");
+    public void DeleteColumn(uint Index) {
+        if(this.GetWidth() == 1)
+            throw new ArgumentOutOfRangeException(nameof(Index), "Cannot remove the last column of the table.");
 
-        if(Type.StartsWith('R') && Index >= this.TableList.Count || Type.StartsWith('C') && Index >= this.TableList[0].Count)
-            throw new ArgumentOutOfRangeException(nameof(Index), "Table index out of range.");
-
-        if(Type.StartsWith('R') && this.TableList.Count == 1 || Type.StartsWith('C') && this.TableList[0].Count == 1)
-            throw new ArgumentOutOfRangeException(nameof(Index), "Cannot remove the last row/column of the table.");
-
-        switch(Type[0]) {
-            case 'R':
-                this.TableList.RemoveAt((int)Index);
-                break;
-
-            default:
-                for(int i = 0; i < this.TableList.Count; ++i)
-                    this.TableList[i].RemoveAt((int)Index);
-                break;
-        }
+        foreach(List<string> Row in this.TableList)
+            Row.RemoveAt((int)Index);
     }
 
-    public List<string> GetLine(string Type, uint Index) {
-        string[] AllowedTypes = ["Row", "Column", "R", "C"];
-        if(!AllowedTypes.Contains(Type))
-            throw new ArgumentOutOfRangeException(nameof(Type), $"Unknown type: {Type}.");
+    public string Get(uint Row, uint Column) => this.TableList[(int)Row][(int)Column];
 
-        if(Type.StartsWith('R') && Index >= this.TableList.Count || Type.StartsWith('C') && Index >= this.TableList[0].Count)
-            throw new ArgumentOutOfRangeException(nameof(Index), "Table index out of range.");
+    public int GetLength() => this.TableList.Count;
 
-        return Type[0] switch {
-            'R' => this.TableList[(int)Index],
-            _ => Ext.Zip(TableList)[(int)Index]
-        };
-    }
+    public int GetWidth() => Ext.Zip(this.TableList).Count;
 
-    public string Get(uint Row, uint Column) {
-        if(Row >= this.TableList.Count || Column >= this.TableList[0].Count)
-            throw new ArgumentOutOfRangeException(nameof(Row), "Table index out of range.");
-
-        return this.TableList[(int)Row][(int)Column];
-    }
+    public List<string> GetRow(uint Index) => this.TableList[(int)Index];
+    
+    public List<string> GetColumn(uint Index) => Ext.Zip(TableList)[(int)Index];
 
     public string Stringify(string Alignment = "L") {
         string[] AllowedAlignments = ["Left", "Right", "Center", "L", "R", "C"];
         if(!AllowedAlignments.Contains(Alignment))
             throw new ArgumentOutOfRangeException(nameof(Alignment), $"Unknown alignment: {Alignment}.");
 
-
         List<int> LongestPerColumn = [.. Ext.Zip(this.TableList).Select(Column => Column.Select(Cell => Cell.Length).Max())];
-        string Seperator = $"+{string.Join("+", LongestPerColumn.Select(Width => new string('-', Width + 2)))}+";
-        List<string> Output = [Seperator];
 
+        string FirstSeparator = $"┌{string.Join("┬", LongestPerColumn.Select(Width => new string('─', Width + 2)))}┐";
+        string Separator = $"├{string.Join("┼", LongestPerColumn.Select(Width => new string('─', Width + 2)))}┤";
+        string LastSeparator = $"└{string.Join("┴", LongestPerColumn.Select(Width => new string('─', Width + 2)))}┘";
+
+        List<string> Output = [FirstSeparator];
+        int Iteration = 0;
         foreach(List<string> Row in this.TableList) {
             List<string> CellStrings = [.. Row.Select((Cell, Column) => (Cell, Column)).ToList().Select((Row) =>
                 Alignment[0] switch {
@@ -149,12 +101,18 @@ public class Table {
                     _ => Ext.Center(Row.Cell, (uint)LongestPerColumn[Row.Column])
                 }
             )];
-            string RowString = $"| {string.Join(" | ", CellStrings)} |";
+            string RowString = $"│ {string.Join(" │ ", CellStrings)} │";
             Output.Add(RowString);
-            Output.Add(Seperator);
+
+            if(Iteration == this.GetLength() - 1)
+                Output.Add(LastSeparator);
+            else Output.Add(Separator);
+            Iteration += 1;
         }
         return string.Join("\n", Output);
     }
+
+    public string CSVify() => string.Join("\n", this.TableList.Select((Row) => string.Join(",", Row)));
 
     private List<List<string>> TableList = [];
 }

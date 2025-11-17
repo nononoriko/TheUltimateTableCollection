@@ -23,8 +23,8 @@ class Table:
 
         self.Table = [[""] * row] * column
     
-    @staticmethod
-    def Parse(table: list[list[str]]) -> Self:
+    @classmethod
+    def Parse(cls, table: list[list[str]]) -> Self:
         """
         Parse a 2D list into a Table object.
 
@@ -102,9 +102,6 @@ class Table:
         if not isinstance(column, int):
             raise TypeError("Param column must be an int.")
         
-        if row >= self.GetLength() or column >= self.GetWidth():
-            raise IndexError("Table index out of range.")
-
         self.Table[row][column] = value
 
     def DeleteRow(self, index: int) -> None:
@@ -113,9 +110,6 @@ class Table:
         """
         if not isinstance(index, int):
             raise TypeError("Param index must be an int.")
-        
-        if index >= self.GetLength():
-            raise IndexError("Table row index out of range.")
         
         if self.GetLength() == 1:
             raise ValueError(f"Cannot remove the last row of the table.")
@@ -128,10 +122,7 @@ class Table:
         """
         if not isinstance(index, int):
             raise TypeError("Param index must be an int.")
-        
-        if index >= self.GetWidth():
-            raise IndexError("Table column index out of range.")
-        
+                
         if self.GetWidth() == 1:
             raise ValueError("Cannot remove the last column of the table.")
         
@@ -157,9 +148,6 @@ class Table:
         if not isinstance(index, int):
             raise TypeError("Param index must be an int.")
         
-        if index >= self.GetLength():
-            raise IndexError("Table index out of range.")
-        
         return deepcopy(self.Table[index])
     
     def GetColumn(self, index: int) -> list[str]:
@@ -168,9 +156,6 @@ class Table:
         """
         if not isinstance(index, int):
             raise TypeError("Param index must be an int.")
-        
-        if index >= self.GetWidth():
-            raise IndexError("Table index out of range.")
         
         return list(list(zip(*self.Table))[index])
 
@@ -184,9 +169,6 @@ class Table:
         if not isinstance(column, int):
             raise TypeError("Param column must be an int.")
         
-        if row >= self.GetLength() or column >= self.GetWidth():
-            raise IndexError("Table index out of range.")
-        
         return self.Table[row][column]
 
     def Stringify(self, alignment: Literal["Left", "Right", "Center", "L", "R", "C"] = "L") -> str:
@@ -197,19 +179,22 @@ class Table:
             raise ValueError(f"Unknown alignment: {alignment}.")
         
         LongestPerColumn: list[int] = [max(len(Cell) for Cell in Column) for Column in zip(*self.Table)]
-        Seperator: str = f"+{'+'.join("-" * (Width + 2) for Width in LongestPerColumn)}+"
-        Output: list[str] = [Seperator]
+        FirstSeperator: str = f"┌{'┬'.join("─" * (Width + 2) for Width in LongestPerColumn)}┐"
+        Seperator: str = f"├{'┼'.join("─" * (Width + 2) for Width in LongestPerColumn)}┤"
+        LastSeperator: str = f"└{'┴'.join("─" * (Width + 2) for Width in LongestPerColumn)}┘"
+        Output: list[str] = [FirstSeperator]
 
-        for Row in self.Table:
+        for Index, Row in enumerate(self.Table):
             CellStrings: list[str] = [
                 Cell.rjust(LongestPerColumn[Column]) if alignment.startswith("R")
                 else Cell.ljust(LongestPerColumn[Column]) if alignment.startswith("L")
                 else Cell.center(LongestPerColumn[Column])
                 for Column, Cell in enumerate(Row)
             ]
-            RowString: str = f"| {' | '.join(CellStrings)} |"
+            RowString: str = f"│ {' │ '.join(CellStrings)} │"
             Output.append(RowString)
-            Output.append(Seperator)
+
+            Output.append(LastSeperator) if Index == self.GetLength() - 1 else Output.append(Seperator)
 
         return "\n".join(Output)
     
