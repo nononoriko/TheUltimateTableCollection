@@ -133,7 +133,7 @@ class Table:
         """
         Get the amount of rows in the table.
         """
-        return self.GetLength()
+        return len(self.Table)
 
     def GetWidth(self) -> int:
         """
