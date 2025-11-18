@@ -88,7 +88,6 @@ export default class Table {
 
     public GetRow = (index: number): string[] => structuredClone(this.Table[index]);
 
-
     public GetComlumn = (index: number): string[] => Table.Zip(this.Table)[index];
 
     public Get = (row: number, column: number): string => this.Table[row][column];
@@ -135,15 +134,6 @@ export default class Table {
     };
 
     private static Clamp = (number: number, min: number, max?: number) => {
-        if(typeof number !== "number")
-            throw new TypeError("Param number must be a number.");
-
-        if(typeof min !== "number")
-            throw new TypeError("Param min must be a number.");
-
-        if(typeof max !== "number" || max === null)
-            throw new TypeError("Param max must be a number or null.");
-
         if(!max)
             [min, max] = [0, min];
 

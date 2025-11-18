@@ -10,10 +10,10 @@
 #include <format>
 #include <ranges>
 
+using std::string;
+using std::vector;
+
 namespace Ext {
-    using std::string;
-    using std::vector;
-    
     class ValueError : public std::exception {
         public:
             explicit ValueError(const string &message) : Message(message) {}
@@ -40,19 +40,19 @@ namespace Ext {
     
     class ExtString {
         public:
-            static string LJust(const string &str, size_t width, char fill = ' ') {
+            static string LJust(const string &str, size_t width, char fill = ' ') noexcept {
                 if(str.size() >= width) 
                     return str;
                 return str + string(width - str.size(), fill);
             }
     
-            static string RJust(const string &str, size_t width, char fill = ' ') {
+            static string RJust(const string &str, size_t width, char fill = ' ') noexcept {
                 if(str.size() >= width) 
                     return str;
                 return string(width - str.size(), fill) + str;
             }
     
-            static string Center(const string &str, size_t width, char fill = ' ') {
+            static string Center(const string &str, size_t width, char fill = ' ') noexcept {
                 if(str.size() >= width) 
                     return str;
                 size_t Total = width - str.size();
