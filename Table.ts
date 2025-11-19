@@ -95,13 +95,10 @@ export default class Table {
     public Stringify = (alignment: "Left" | "Right" | "Center" | "L" | "R" | "C" = "L"): string => {
         const LongestPerColumn: number[] = Table.Zip(...this.Table).map(Column => Math.max(...Column.map(Cell => Cell.length)));
 
-        const FirstSeparator: string = `┌${LongestPerColumn.map(Width => "─".repeat(Width + 2)).join("┬")}┐`;
-        const Separator: string = `├${LongestPerColumn.map(Width => "─".repeat(Width + 2)).join("┼")}┤`;
-        const LastSeparator: string = `└${LongestPerColumn.map(Width => "─".repeat(Width + 2)).join("┴")}┘`;
-
-        const Output: string[] = [FirstSeparator];
+        const Output: string[] = [`┌${LongestPerColumn.map(Width => "─".repeat(Width + 2)).join("┬")}┐`];
 
         for(const [Index, Row] of this.Table.entries()) {
+            const Separator: string = Index == this.GetLength() ? `└${LongestPerColumn.map(Width => "─".repeat(Width + 2)).join("┴")}┘` : `└${LongestPerColumn.map(Width => "─".repeat(Width + 2)).join("┴")}┘`;
             const CellStrings: string[] = [...Row.entries()].map(([Column, Cell]) => 
                 alignment.startsWith("R") ? Cell.padStart(LongestPerColumn[Column]) : 
                 alignment.startsWith("L") ? Cell.padEnd(LongestPerColumn[Column]) : 
@@ -109,9 +106,7 @@ export default class Table {
             );
 
             const RowString: string = `│ ${CellStrings.join(" │ ")} │`;
-            Output.push(RowString);
-
-            Index == this.GetLength() ? Output.push(LastSeparator) : Output.push(Separator);
+            Output.push(RowString, Separator);
         }
         return Output.join("\n");
     };

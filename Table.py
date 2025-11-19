@@ -2,8 +2,6 @@ from typing import Literal, Self
 from copy import deepcopy
 
 class Table:
-    Table: list[list[str]] = []
-
     def __init__(self, row: int = 1, column: int = 1) -> None:
         """
         Create a table.
@@ -21,14 +19,12 @@ class Table:
         elif row <= 0:
             raise ValueError("Cannot create a table with 0 rows.")
 
-        self.Table = [[""] * row] * column
+        self.Table: list[list[str]] = [[""] * row] * column
     
     @classmethod
     def Parse(cls, table: list[list[str]]) -> Self:
         """
         Parse a 2D list into a Table object.
-
-        Pass in True for the cast param in order to enable automatic casting. Note: Custom classes must implement the __str__() method.
         """
         if not isinstance(table, list):
             raise TypeError("Param table must be a list.")
@@ -179,12 +175,10 @@ class Table:
             raise ValueError(f"Unknown alignment: {alignment}.")
         
         LongestPerColumn: list[int] = [max(len(Cell) for Cell in Column) for Column in zip(*self.Table)]
-        FirstSeperator: str = f"┌{'┬'.join("─" * (Width + 2) for Width in LongestPerColumn)}┐"
-        Seperator: str = f"├{'┼'.join("─" * (Width + 2) for Width in LongestPerColumn)}┤"
-        LastSeperator: str = f"└{'┴'.join("─" * (Width + 2) for Width in LongestPerColumn)}┘"
-        Output: list[str] = [FirstSeperator]
+        Output: list[str] = [f"┌{'┬'.join("─" * (Width + 2) for Width in LongestPerColumn)}┐"]
 
         for Index, Row in enumerate(self.Table):
+            Seperator: str = f"└{'┴'.join("─" * (Width + 2) for Width in LongestPerColumn)}┘" if Index == self.GetLength() - 1 else f"├{'┼'.join("─" * (Width + 2) for Width in LongestPerColumn)}┤"
             CellStrings: list[str] = [
                 Cell.rjust(LongestPerColumn[Column]) if alignment.startswith("R")
                 else Cell.ljust(LongestPerColumn[Column]) if alignment.startswith("L")
@@ -192,9 +186,9 @@ class Table:
                 for Column, Cell in enumerate(Row)
             ]
             RowString: str = f"│ {' │ '.join(CellStrings)} │"
-            Output.append(RowString)
 
-            Output.append(LastSeperator) if Index == self.GetLength() - 1 else Output.append(Seperator)
+            Output.append(RowString)
+            Output.append(Seperator)
 
         return "\n".join(Output)
     

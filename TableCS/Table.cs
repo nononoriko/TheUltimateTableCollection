@@ -87,13 +87,10 @@ public class Table {
 
         List<int> LongestPerColumn = [.. Ext.Zip(this.TableList).Select(Column => Column.Select(Cell => Cell.Length).Max())];
 
-        string FirstSeparator = $"┌{string.Join("┬", LongestPerColumn.Select(Width => new string('─', Width + 2)))}┐";
-        string Separator = $"├{string.Join("┼", LongestPerColumn.Select(Width => new string('─', Width + 2)))}┤";
-        string LastSeparator = $"└{string.Join("┴", LongestPerColumn.Select(Width => new string('─', Width + 2)))}┘";
-
-        List<string> Output = [FirstSeparator];
+        List<string> Output = [$"┌{string.Join("┬", LongestPerColumn.Select(Width => new string('─', Width + 2)))}┐"];
         int Iteration = 0;
         foreach(List<string> Row in this.TableList) {
+            string Separator = Iteration == this.GetLength() - 1 ? $"└{string.Join("┴", LongestPerColumn.Select(Width => new string('─', Width + 2)))}┘" : $"├{string.Join("┼", LongestPerColumn.Select(Width => new string('─', Width + 2)))}┤";
             List<string> CellStrings = [.. Row.Select((Cell, Column) => (Cell, Column)).ToList().Select((Row) =>
                 Alignment[0] switch {
                     'R' => Row.Cell.PadLeft(LongestPerColumn[Row.Column]),
@@ -103,10 +100,7 @@ public class Table {
             )];
             string RowString = $"│ {string.Join(" │ ", CellStrings)} │";
             Output.Add(RowString);
-
-            if(Iteration == this.GetLength() - 1)
-                Output.Add(LastSeparator);
-            else Output.Add(Separator);
+            Output.Add(Separator);
             Iteration += 1;
         }
         return string.Join("\n", Output);

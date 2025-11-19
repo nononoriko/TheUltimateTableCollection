@@ -112,16 +112,13 @@ public class Table {
 
         List<Integer> LongestPerColumn = Ext.Zip(this.TableList).stream().map(Column -> Collections.max(Column.stream().map(Cell -> Cell.length()).collect(Collectors.toList()))).collect(Collectors.toList());
 
-        String FirstSeparator = String.format("┌%s┐", String.join("┬", LongestPerColumn.stream().map(Width -> "─".repeat(Width + 2)).collect(Collectors.toList())));
-        String Separator = String.format("├%s┤", String.join("┼", LongestPerColumn.stream().map(Width -> "─".repeat(Width + 2)).collect(Collectors.toList())));
-        String LastSeparator = String.format("└%s┘", String.join("┴", LongestPerColumn.stream().map(Width -> "─".repeat(Width + 2)).collect(Collectors.toList())));
-
         List<String> Output = new ArrayList<>();
-        Output.add(FirstSeparator);
+        Output.add(String.format("┌%s┐", String.join("┬", LongestPerColumn.stream().map(Width -> "─".repeat(Width + 2)).collect(Collectors.toList()))));
 
         int Iteration = 0;
         for(List<String> Row : this.TableList) {
             List<String> CellStrings = new ArrayList<>();
+            String Separator = Iteration == this.GetLength() - 1 ? String.format("└%s┘", String.join("┴", LongestPerColumn.stream().map(Width -> "─".repeat(Width + 2)).collect(Collectors.toList()))) : String.format("├%s┤", String.join("┼", LongestPerColumn.stream().map(Width -> "─".repeat(Width + 2)).collect(Collectors.toList())));
             for(int i = 0; i < Row.size(); ++i) {
                 String Cell = Row.get(i);
                 int Width = LongestPerColumn.get(i);
@@ -133,10 +130,7 @@ public class Table {
                 CellStrings.add(Formatted);
             }
             Output.add(String.format("│ %s │", String.join(" │ ", CellStrings)));
-
-            if(Iteration == this.GetLength() - 1)
-                Output.add(LastSeparator);
-            else Output.add(Separator);
+            Output.add(Separator);
             Iteration += 1;
         }
         return String.join("\n", Output);

@@ -165,30 +165,15 @@ pub mod Ext {
                 .map(|Column: &Vec<String>| Column.iter().map(|Cell: &String| Cell.len()).max().unwrap_or(0))
                 .collect();
             
-            let FirstSeparator: String = std::format!("┌{}┐", 
-                LongestPerColumn
-                .iter()
-                .map(|Width| "─".repeat(Width + 2))
-                .collect::<Vec<String>>().join("┬")
-            );
-
-            let Separator: String = std::format!("├{}┤", 
-                LongestPerColumn
-                .iter()
-                .map(|Width| "─".repeat(Width + 2))
-                .collect::<Vec<String>>().join("┼")
-            );
-
-            let LastSeparator: String = std::format!("└{}┘", 
-                LongestPerColumn
-                .iter()
-                .map(|Width| "─".repeat(Width + 2))
-                .collect::<Vec<String>>().join("┴")
-            );
-
-            let mut Output: Vec<String> = vec![FirstSeparator];
+            let mut Output: Vec<String> = vec![std::format!("┌{}┐", LongestPerColumn.iter().map(|Width| "─".repeat(Width + 2)).collect::<Vec<String>>().join("┬"))];
 
             for Row in 0..self.GetLength() {
+                let Seperator: String = if Row == self.GetLength() - 1 { 
+                    std::format!("└{}┘", LongestPerColumn.iter().map(|Width| "─".repeat(Width + 2)).collect::<Vec<String>>().join("┴")) 
+                } 
+                else {
+                     std::format!("├{}┤", LongestPerColumn.iter().map(|Width| "─".repeat(Width + 2)).collect::<Vec<String>>().join("┼")) 
+                };
                 let CellStrings: Vec<String> = 
                     self.TableVec[Row].iter().enumerate().map(|(Column, Cell)| {
                         let Width: usize = LongestPerColumn[Column];
@@ -201,12 +186,8 @@ pub mod Ext {
                     .collect();
                 let RowString: String = std::format!("│ {} │", CellStrings.join(" │ "));
                 Output.push(RowString);
-
-                if Row < self.GetLength() - 1 {
-                    Output.push(Separator.clone());
-                }
+                Output.push(Seperator);
             }
-            Output.push(LastSeparator);
             return Ok(Output.join("\n"));
         }
 

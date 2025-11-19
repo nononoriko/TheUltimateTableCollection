@@ -217,21 +217,13 @@ namespace Ext {
                     return static_cast<unsigned int>(maxlen);
                 });
                 
-                string FirstSeparator = std::format("┌{}┐", ExtString::Join(Table::Map(LongestPerColumn,
-                    [](unsigned int Width) { return ExtString::Repeat("─", Width + 2); }), "┬"));
-
-                string Separator = std::format("├{}┤", ExtString::Join(Table::Map(LongestPerColumn,
-                    [](unsigned int Width) { return ExtString::Repeat("─", Width + 2); }), "┼"));
-
-                string LastSeparator = std::format("└{}┘", ExtString::Join(Table::Map(LongestPerColumn,
-                    [](unsigned int Width) { return ExtString::Repeat("─", Width + 2); }), "┴"));
-    
-                vector<string> Output = {FirstSeparator};
+                vector<string> Output = {std::format("┌{}┐", ExtString::Join(Table::Map(LongestPerColumn, [](unsigned int Width) { return ExtString::Repeat("─", Width + 2); }), "┬"))};
 
                 size_t Iteration = 0;
     
                 for(const vector<string> &Row : this->TableVect) {
                     vector<string> CellStrings;
+                    string Separator = Iteration == this->GetLength() - 1 ? std::format("└{}┘", ExtString::Join(Table::Map(LongestPerColumn, [](unsigned int Width) { return ExtString::Repeat("─", Width + 2); }), "┴")) : std::format("├{}┤", ExtString::Join(Table::Map(LongestPerColumn, [](unsigned int Width) { return ExtString::Repeat("─", Width + 2); }), "┼"));
                     for(size_t j = 0; j < Row.size(); ++j) {
                         const auto &Cell = Row[j];
                         if(alignment.starts_with("R"))
@@ -243,8 +235,7 @@ namespace Ext {
                     
                     string RowStr = std::format("│ {} │", ExtString::Join(CellStrings, " │ "));
                     Output.push_back(RowStr);
-
-                    Iteration == this->GetLength() - 1 ? Output.push_back(LastSeparator) : Output.push_back(Separator);
+                    Output.push_back(Separator);
                     Iteration += 1;
                 }
                 
